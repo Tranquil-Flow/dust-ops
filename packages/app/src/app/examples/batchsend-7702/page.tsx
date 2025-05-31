@@ -1,16 +1,38 @@
 'use client'
-import { useAccount, useBalance, useSimulateContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
-import { erc20Abi, isAddress } from 'viem'
+import {
+  useAccount,
+  useBalance,
+  useSimulateContract,
+  useWriteContract,
+  useWaitForTransactionReceipt,
+  useWalletClient,
+} from 'wagmi'
 import { useState, useEffect } from 'react'
 import { parseEther } from 'viem'
 import { useNotifications } from '@/context/Notifications'
-import Token from '@/assets/icons/token.png'
-import { AddressInput } from '@/components/AddressInput'
-import { TokenBalance } from '@/components/TokenBalance'
-import { TokenQuantityInput } from '@/components/TokenQuantityInput'
 import { formatBalance } from '@/utils/format'
+import { signAuthorization } from 'viem/actions'
 
-type Address = `0x${string}` | undefined
+const batchCallDelegationAbi = [
+  {
+    inputs: [
+      {
+        components: [
+          { internalType: 'bytes', name: 'data', type: 'bytes' },
+          { internalType: 'address', name: 'to', type: 'address' },
+          { internalType: 'uint256', name: 'value', type: 'uint256' },
+        ],
+        internalType: 'struct BatchCallDelegation.Call[]',
+        name: 'calls',
+        type: 'tuple[]',
+      },
+    ],
+    name: 'execute',
+    outputs: [],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+] as const
 
 const receivers = [
   '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
@@ -23,28 +45,35 @@ const receivers = [
   '0x14dC79964da2C08b23698B3D3cc7Ca32193d9955',
   '0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f',
   '0xa0Ee7A142d267C1f36714E4a8F75612F20a79720',
-]
+] as const
+
+type Call = {
+  data: `0x${string}`
+  to: `0x${string}`
+  value: bigint
+}
 
 export default function Batchsend7702() {
-  const [to, setTo] = useState<Address>(undefined)
   const [amount, setAmount] = useState('0.01')
-  const [tokenAddress, setTokenAddress] = useState<Address>(undefined)
-  const [isValidTokenAddress, setIsValidTokenAddress] = useState<boolean>(false)
-  const [isValidToAddress, setIsValidToAddress] = useState<boolean>(false)
-
   const { Add } = useNotifications()
-
+  const { data: walletClient } = useWalletClient()
   const { address, chain } = useAccount()
   const { data: balanceData } = useBalance({
-    token: isValidTokenAddress ? tokenAddress : undefined,
     address,
   })
 
+  const calls: Call[] = receivers.map((to) => ({
+    data: '0x' as `0x${string}`,
+    to: to as `0x${string}`,
+    value: parseEther(amount),
+  }))
+
   const { error: estimateError } = useSimulateContract({
-    address: balanceData && isValidToAddress ? tokenAddress : undefined,
-    abi: erc20Abi,
-    functionName: 'transfer',
-    args: [to!, parseEther(amount)],
+    address: address,
+    abi: batchCallDelegationAbi,
+    functionName: 'execute',
+    args: [calls],
+    value: parseEther(amount) * BigInt(receivers.length),
   })
 
   const { data, writeContract } = useWriteContract()
@@ -57,31 +86,82 @@ export default function Batchsend7702() {
     hash: data,
   })
 
-  const handleSendTransation = () => {
+  const handleSendTransaction = async () => {
     if (estimateError) {
       Add(`Transaction failed: ${estimateError.cause}`, {
         type: 'error',
       })
       return
     }
-    writeContract({
-      address: tokenAddress!,
-      abi: erc20Abi,
-      functionName: 'transfer',
-      args: [to!, parseEther(amount)],
-    })
-  }
 
-  const handleTokenAddressInput = (token: string) => {
-    if (token.startsWith('0x')) setTokenAddress(token as `0x${string}`)
-    else setTokenAddress(`0x${token}`)
-    setIsValidTokenAddress(isAddress(token))
-  }
+    try {
+      if (!window.ethereum) {
+        throw new Error('No ethereum provider found')
+      } else if (!walletClient) {
+        throw new Error('No walletClient')
+      } else if (!address) {
+        throw new Error('Not connected (no address)')
+      }
 
-  const handleToAdressInput = (to: string) => {
-    if (to.startsWith('0x')) setTo(to as `0x${string}`)
-    else setTo(`0x${to}`)
-    setIsValidToAddress(isAddress(to))
+      // // Sign the EIP-712 typed data for authorization
+      // const domain = {
+      //   name: 'EIP-7702',
+      //   version: '1',
+      //   chainId: chain?.id,
+      //   verifyingContract: address,
+      // }
+
+      // const types = {
+      //   EIP712Domain: [
+      //     { name: 'name', type: 'string' },
+      //     { name: 'version', type: 'string' },
+      //     { name: 'chainId', type: 'uint256' },
+      //     { name: 'verifyingContract', type: 'address' },
+      //   ],
+      //   Authorization: [
+      //     { name: 'authorizer', type: 'address' },
+      //     { name: 'authorized', type: 'address' },
+      //     { name: 'nonce', type: 'uint256' },
+      //   ],
+      // }
+
+      // const message = {
+      //   authorizer: address,
+      //   authorized: address,
+      //   nonce: 0,
+      // }
+
+      // const authorization = await (window.ethereum as any).request({
+      //   method: 'eth_signTypedData_v4',
+      //   params: [address, { domain, types, primaryType: 'Authorization', message }],
+      // })
+
+      // Deployed with `make simple-deploy contract=BatchCallDelegation`
+      const contractAddress = '0x56BBC4969818d4E27Fe39983f8aDee4F3e1C5c6f'
+
+      console.log('wc account', walletClient.account)
+      const authorization = await signAuthorization(walletClient, {
+        account: address,
+        contractAddress: contractAddress,
+        executor: 'self',
+      })
+
+      console.log({ authorization })
+      // Execute the batch send
+      writeContract({
+        address: address!,
+        abi: batchCallDelegationAbi,
+        functionName: 'execute',
+        args: [calls],
+        value: parseEther(amount) * BigInt(receivers.length),
+        authorizationList: [authorization],
+      })
+    } catch (error) {
+      console.error(error)
+      Add(`Failed to send transaction: ${error}`, {
+        type: 'error',
+      })
+    }
   }
 
   useEffect(() => {
@@ -98,73 +178,54 @@ export default function Batchsend7702() {
   }, [txSuccess, txError])
 
   return (
-    <div className='flex-column align-center '>
-      <h1 className='text-xl'>Send ERC-20 Token</h1>
-      <label className='form-control w-full mt-10'>
-        <div className='label'>
-          <span className='label-text'>ERC-20 Token address</span>
-        </div>
-        <input
-          type='text'
-          placeholder='0x...'
-          className={`input input-bordered w-full ${
-            !isValidTokenAddress && tokenAddress != undefined ? 'input-error' : ''
-          }`}
-          onChange={(e) => handleTokenAddressInput(e.target.value)}
-        />
-      </label>
+    <div className='flex-column align-center'>
+      <h1 className='text-xl'>Batch Send ETH</h1>
+      <div className='flex-col m-2'>
+        <label className='form-control w-full max-w-xs'>
+          <div className='label'>
+            <span className='label-text'>Amount of ETH to send to each address</span>
+          </div>
+          <input
+            type='number'
+            step='0.001'
+            min='0'
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            className='input input-bordered w-full max-w-xs'
+          />
+        </label>
 
-      {isValidTokenAddress && balanceData && (
-        <div className='flex align-end grid md:grid-cols-1 lg:grid-cols-2 gap-4 mt-10'>
-          <div className='flex-col m-2 '>
-            <label className='form-control w-full max-w-xs'>
-              <div className='label py-2'>
-                <span className='label-text'>Recipient address</span>
-              </div>
-              <AddressInput
-                onRecipientChange={handleToAdressInput}
-                type='text'
-                placeholder='0x...'
-                className={`input input-bordered w-full max-w-xs ${
-                  !isValidToAddress && to != undefined ? 'input-error' : ''
-                }`}
-                value={to ?? ''}
-              />
-            </label>
-            <label className='form-control w-full max-w-xs'>
-              <div className='label'>
-                <span className='label-text'>Number of tokens to send</span>
-              </div>
-              <TokenQuantityInput
-                onChange={setAmount}
-                quantity={amount}
-                maxValue={formatBalance(balanceData?.value ?? BigInt(0))}
-              />
-            </label>
-          </div>
-          <div className='flex-col justify-end m-2'>
-            <div className='stats shadow-sm join-item mb-2 bg-[#282c33]'>
-              <div className='stat '>
-                <div className='stat-figure text-secondary'>
-                  <img className='opacity-25 ml-10' width={50} src={Token.src} alt='token' />
-                </div>
-                <div className='stat-title '>Your balance</div>
-                {tokenAddress && address ? (
-                  <TokenBalance address={address} tokenAddress={tokenAddress} />
-                ) : (
-                  <p>Please connect your wallet</p>
-                )}
-              </div>
-            </div>
-            <button
-              className='btn btn-wide w-[100%] '
-              onClick={handleSendTransation}
-              disabled={!isValidToAddress || !address || Boolean(estimateError) || amount === ''}>
-              {isLoading ? <span className='loading loading-dots loading-sm'></span> : 'Send ethers'}
-            </button>
+        <div className='stats shadow-sm join-item mb-2 bg-[#282c33] mt-4'>
+          <div className='stat'>
+            <div className='stat-title'>Your balance</div>
+            {address ? (
+              <div>{formatBalance(balanceData?.value ?? BigInt(0))} ETH</div>
+            ) : (
+              <p>Please connect your wallet</p>
+            )}
           </div>
         </div>
-      )}
+
+        <div className='mt-4'>
+          {address}
+          {walletClient?.transport.type}
+          <h2 className='text-lg mb-2'>Receivers ({receivers.length})</h2>
+          <div className='max-h-60 overflow-y-auto'>
+            {receivers.map((receiver, index) => (
+              <div key={receiver} className='text-sm mb-1'>
+                {index + 1}. {receiver}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <button
+          className='btn btn-wide w-[100%] mt-4'
+          onClick={handleSendTransaction}
+          disabled={!address || Boolean(estimateError) || amount === '' || isLoading}>
+          {isLoading ? <span className='loading loading-dots loading-sm'></span> : 'Send ETH to all'}
+        </button>
+      </div>
     </div>
   )
 }
