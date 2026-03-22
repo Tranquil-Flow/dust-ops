@@ -8,55 +8,55 @@
 ## Phase 1 — Core Implementation
 
 ### Task 1: Remove Dead Hackathon Code
-- [ ] Delete `packages/foundry/` directory (Solidity contracts)
-- [ ] Delete `lib/` directory (LayerZero/OpenZeppelin submodules)
-- [ ] Delete `.gitmodules` file
-- [ ] Delete `ethglobalprague/` submodule reference
-- [ ] Remove private key flow: `privateKeyAtom`, `usePrivateAccount` hook, private key input in `WalletConnection.tsx`
-- [ ] Remove `getHoldingsAction.tsx` (Sepolia/Rootstock server action)
-- [ ] Remove `getQuoteAction.ts` (Uniswap V4 quoting)
-- [ ] Remove `abis.ts` (65KB contract ABIs)
-- [ ] Remove privacy deposit page (`privacy-deposit/`) + `SweepProcessing.tsx` animation
-- [ ] Remove Railgun-related atoms and UI references
-- [ ] Remove hardcoded gas estimates and ETH price constants
-- [ ] Remove `examples/` directory (EIP-7702 experiments with leaked env vars)
-- [ ] Remove debug/test pricing utilities (`debug-pricing.ts`, `test-pricing.ts`, `pricing-comparison.ts`)
-- [ ] Remove unused dependencies from package.json: `@uniswap/*`, `@privy-io/react-auth`, `siwe`
-- [ ] Install `@lifi/sdk`
-- [ ] Verify build still compiles after cleanup
+- [x] Delete `packages/foundry/` directory (Solidity contracts)
+- [x] Delete `lib/` directory (LayerZero/OpenZeppelin submodules)
+- [x] Delete `.gitmodules` file
+- [x] Delete `ethglobalprague/` submodule reference
+- [x] Remove private key flow: `privateKeyAtom`, `usePrivateAccount` hook, private key input in `WalletConnection.tsx`
+- [x] Remove `getHoldingsAction.tsx` (Sepolia/Rootstock server action)
+- [x] Remove `getQuoteAction.ts` (Uniswap V4 quoting)
+- [x] Remove `abis.ts` (65KB contract ABIs)
+- [x] Remove privacy deposit page (`privacy-deposit/`) + `SweepProcessing.tsx` animation
+- [x] Remove Railgun-related atoms and UI references
+- [x] Remove hardcoded gas estimates and ETH price constants
+- [x] Remove `examples/` directory (EIP-7702 experiments with leaked env vars)
+- [x] Remove debug/test pricing utilities (`debug-pricing.ts`, `test-pricing.ts`, `pricing-comparison.ts`)
+- [x] Remove unused dependencies from package.json: `@uniswap/*`, `@privy-io/react-auth`, `siwe`
+- [x] Install `@lifi/sdk`
+- [x] Verify build still compiles after cleanup
 
 ### Task 2: Chain Registry & Types
-- [ ] Create `src/config/chains.ts` — 9-chain registry (Ethereum, Base, Optimism, Arbitrum, Polygon, Scroll, Linea, zkSync Era, Unichain) with explorer API configs, LI.FI chain keys, gas tiers
-- [ ] Create `src/config/types.ts` — `ScannedToken`, `SweepPlan`, `SweepState`, `Quote`, `ChainConfig` types
-- [ ] Wire chain config into `network.ts` (replace hardcoded 3-chain list)
+- [x] Create `src/config/chains.ts` — 9-chain registry (Ethereum, Base, Optimism, Arbitrum, Polygon, Scroll, Linea, zkSync Era, Unichain) with explorer API configs, LI.FI chain keys, gas tiers
+- [x] Create `src/config/types.ts` — `ScannedToken`, `SweepPlan`, `SweepState`, `Quote`, `ChainConfig` types
+- [x] Wire chain config into `network.ts` (replace hardcoded 3-chain list)
 
 ### Task 3: State Atoms
-- [ ] Replace `privateKeyAtom` / `railgunAddressAtom` with new sweep atoms: `scannedTokensAtom`, `selectedTokensAtom`, `sweepPlansAtom`, `sweepStateAtom`, `destinationAtom`
-- [ ] Remove stale atom references across components
+- [x] Replace `privateKeyAtom` / `railgunAddressAtom` with new sweep atoms: `scannedTokensAtom`, `selectedTokensAtom`, `sweepPlansAtom`, `sweepStateAtom`, `destinationAtom`
+- [x] Remove stale atom references across components
 
 ### Task 4: Scanner Adapters
-- [ ] Create `ChainScanner` interface: `fetchTokenBalances(address: string): Promise<TokenBalance[]>`
-- [ ] Implement `BlockscoutScanner` (for Base, Optimism, Unichain, Scroll)
-- [ ] Implement `EtherscanScanner` (for Ethereum, Arbitrum, Polygon, Linea, zkSync Era)
-- [ ] Create `/api/scan` server-side route — parallel multi-chain scan with price discovery
-- [ ] Add gas viability classification per token (sweepable / uneconomic / no-route)
+- [x] Create `ChainScanner` interface: `fetchTokenBalances(address: string): Promise<TokenBalance[]>`
+- [x] Implement `BlockscoutScanner` (for Base, Optimism, Unichain, Scroll)
+- [x] Implement `EtherscanScanner` (for Ethereum, Arbitrum, Polygon, Linea, zkSync Era)
+- [x] Create `/api/scan` server-side route — parallel multi-chain scan with price discovery
+- [x] Add gas viability classification per token (sweepable / uneconomic / no-route)
 
 ### Task 5: LI.FI Integration
-- [ ] Create `SwapProvider` interface: `getSwapQuote()`, `getBridgeQuote()`, `getStatus()`
-- [ ] Implement `LiFiProvider` using `@lifi/sdk`
-- [ ] Create `/api/quote` route — LI.FI quote proxy with 30s TTL caching
-- [ ] Create `/api/status` route — transaction/bridge status polling proxy
+- [x] Create `SwapProvider` interface: `getSwapQuote()`, `getBridgeQuote()`, `getStatus()`
+- [x] Implement `LiFiProvider` using `@lifi/sdk`
+- [x] Create `/api/quote` route — LI.FI quote proxy with 30s TTL caching
+- [x] Create `/api/status` route — transaction/bridge status polling proxy
 
 ### Task 6: Demo / Testnet Mode
-- [ ] Create `src/config/demo.ts` — feature flag (`NEXT_PUBLIC_DEMO_MODE=true`) to toggle demo mode
-- [ ] Create `MockScanner` adapter — returns realistic fake token balances across multiple chains (mix of sweepable, uneconomic, and no-route tokens)
-- [ ] Create `MockSwapProvider` — returns fake LI.FI quotes with realistic gas estimates and simulated 2-3s execution delays
-- [ ] Create mock wallet hook — simulates `wallet_sendCalls` and `wallet_getCallsStatus` without a real wallet connection
-- [ ] Wire demo mode into scan/quote/status API routes — when flag is set, return mock data instead of calling external APIs
-- [ ] Wire demo mode into wallet connection — skip WalletConnect, auto-connect with a demo address
-- [ ] Add visible "DEMO MODE" banner in the UI header when active
-- [ ] Ensure full wizard flow works end-to-end in demo mode: connect → scan → select → review → execute → complete
-- [ ] Document demo mode setup in CLAUDE.md
+- [x] Create `src/config/demo.ts` — feature flag (`NEXT_PUBLIC_DEMO_MODE=true`) to toggle demo mode
+- [x] Create `MockScanner` adapter — returns realistic fake token balances across multiple chains (mix of sweepable, uneconomic, and no-route tokens)
+- [x] Create `MockSwapProvider` — returns fake LI.FI quotes with realistic gas estimates and simulated 2-3s execution delays
+- [x] Create mock wallet hook — simulates `wallet_sendCalls` and `wallet_getCallsStatus` without a real wallet connection
+- [x] Wire demo mode into scan/quote/status API routes — when flag is set, return mock data instead of calling external APIs
+- [x] Wire demo mode into wallet connection — skip WalletConnect, auto-connect with a demo address
+- [x] Add visible "DEMO MODE" banner in the UI header when active
+- [x] Ensure full wizard flow works end-to-end in demo mode: connect → scan → select → review → execute → complete
+- [x] Document demo mode setup in CLAUDE.md
 
 ### Task 7: Wallet Connection (WalletConnect)
 - [ ] Replace private key input with Reown AppKit WalletConnect modal in Step 0
