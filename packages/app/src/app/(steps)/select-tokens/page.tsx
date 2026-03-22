@@ -4,10 +4,10 @@ import { useEffect } from 'react'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { selectedTokensAtom, stepAtom, tokensAtom, totalValueAtom } from '@/atoms/walletAtoms'
 import { useRouter } from 'next/navigation'
-import { usePrivateAccount } from '@/app/hooks/usePrivateAccount'
+import { useAccount } from 'wagmi'
 
 export default function SelectTokens() {
-  const account = usePrivateAccount()
+  const { address } = useAccount()
   const router = useRouter()
   const setStep = useSetAtom(stepAtom)
 
@@ -47,10 +47,10 @@ export default function SelectTokens() {
   }, [totalValue])
 
   useEffect(() => {
-    if (!account && typeof window !== 'undefined') {
+    if (!address && typeof window !== 'undefined') {
       router.replace('/')
     }
-  }, [account])
+  }, [address])
 
   return (
     <TokenSelection

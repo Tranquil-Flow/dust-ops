@@ -11,9 +11,7 @@ export type Token = {
   selected: boolean
 }
 
-export const privateKeyAtom = atom<string>('')
 export const tokensAtom = atom<Token[]>([])
 export const selectedTokensAtom = atom<Token[]>([])
 export const stepAtom = atom<number>(0)
 export const totalValueAtom = atom<number>(0)
-export const railgunAddressAtom = atom<string>('')
