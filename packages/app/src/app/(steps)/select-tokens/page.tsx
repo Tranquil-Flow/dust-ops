@@ -2,7 +2,7 @@
 import { TokenSelection } from '@/components/sweeper/TokenSelection'
 import { useEffect } from 'react'
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
-import { selectedTokensAtom, stepAtom, tokensAtom, totalValueAtom } from '@/atoms/walletAtoms'
+import { legacySelectedTokensAtom, stepAtom, tokensAtom, totalValueAtom } from '@/atoms/walletAtoms'
 import { useRouter } from 'next/navigation'
 import { useAccount } from 'wagmi'
 
@@ -16,7 +16,7 @@ export default function SelectTokens() {
   }, [])
 
   const tokens = useAtomValue(tokensAtom)
-  const [selectedTokens, setSelectedTokens] = useAtom(selectedTokensAtom)
+  const [selectedTokens, setSelectedTokens] = useAtom(legacySelectedTokensAtom)
 
   // Auto-select tokens that are marked as selected (value > $0.01)
   useEffect(() => {

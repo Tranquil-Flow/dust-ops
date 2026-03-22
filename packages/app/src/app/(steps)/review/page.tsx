@@ -1,6 +1,6 @@
 'use client'
 
-import { selectedTokensAtom, stepAtom, tokensAtom, totalValueAtom } from '@/atoms/walletAtoms'
+import { legacySelectedTokensAtom, stepAtom, tokensAtom, totalValueAtom } from '@/atoms/walletAtoms'
 import { TransactionReview } from '@/components/sweeper/TransactionReview'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { useRouter } from 'next/navigation'
@@ -14,7 +14,7 @@ export default function Review() {
 
   const totalValue = useAtomValue(totalValueAtom)
   const tokens = useAtomValue(tokensAtom)
-  const selectedTokens = useAtomValue(selectedTokensAtom)
+  const selectedTokens = useAtomValue(legacySelectedTokensAtom)
 
   useEffect(() => {
     setStep(3)

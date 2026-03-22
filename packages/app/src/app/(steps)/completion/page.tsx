@@ -1,6 +1,6 @@
 'use client'
 
-import { selectedTokensAtom, stepAtom } from '@/atoms/walletAtoms'
+import { legacySelectedTokensAtom, stepAtom } from '@/atoms/walletAtoms'
 import { SweepCompletion } from '@/components/sweeper/SweepCompletion'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { useRouter } from 'next/navigation'
@@ -11,7 +11,7 @@ export default function Completion() {
   const { address } = useAccount()
   const router = useRouter()
   const setStep = useSetAtom(stepAtom)
-  const selectedTokens = useAtomValue(selectedTokensAtom)
+  const selectedTokens = useAtomValue(legacySelectedTokensAtom)
 
   useEffect(() => {
     setStep(4)

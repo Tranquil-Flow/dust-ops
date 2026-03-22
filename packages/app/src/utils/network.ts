@@ -1,13 +1,37 @@
-import { /*mainnet, arbitrum, base, polygon, optimism,*/ base, optimism, unichain } from '@reown/appkit/networks'
-// import { sepolia } from '@reown/appkit/networks'
-
-export const ETH_CHAINS = [
+import {
+  mainnet,
   base,
   optimism,
+  arbitrum,
+  polygon,
+  scroll,
+  linea,
+  zkSync,
   unichain,
-  /*mainnet, arbitrum, base, polygon, optimism, sepolia,*/
-  //  foundry
-]
+  type AppKitNetwork,
+} from '@reown/appkit/networks'
+import { SUPPORTED_CHAIN_IDS } from '../config/chains'
+
+/**
+ * All chains supported by dust-ops, sourced from the chain registry.
+ * We map SUPPORTED_CHAIN_IDS to @reown/appkit network objects so the
+ * wallet modal knows which networks to support.
+ */
+const APPKIT_NETWORKS_BY_ID: Record<number, AppKitNetwork> = {
+  1: mainnet,
+  8453: base,
+  10: optimism,
+  42161: arbitrum,
+  137: polygon,
+  534352: scroll,
+  59144: linea,
+  324: zkSync,
+  1301: unichain,
+}
+
+export const ETH_CHAINS = SUPPORTED_CHAIN_IDS
+  .map((id) => APPKIT_NETWORKS_BY_ID[id])
+  .filter(Boolean) as AppKitNetwork[]
 
 export const NETWORK_COLORS = {
   ethereum: {
@@ -38,6 +62,14 @@ export const NETWORK_COLORS = {
     color: 'amber',
     bgVariant: 'bg-amber-600',
   },
+  zksync: {
+    color: 'indigo',
+    bgVariant: 'bg-indigo-600',
+  },
+  unichain: {
+    color: 'pink',
+    bgVariant: 'bg-pink-600',
+  },
   other: {
     color: 'gray',
     bgVariant: 'bg-gray-600',
@@ -53,6 +85,8 @@ export function GetNetworkColor(chain?: string, type: 'color' | 'bgVariant' = 'c
   if (chain?.includes('polygon') || chain?.includes('matic')) return NETWORK_COLORS.polygon[type]
   if (chain?.includes('optimism') || chain?.startsWith('op')) return NETWORK_COLORS.optimism[type]
   if (chain?.includes('scroll')) return NETWORK_COLORS.scroll[type]
+  if (chain?.includes('zksync') || chain?.includes('era')) return NETWORK_COLORS.zksync[type]
+  if (chain?.includes('unichain')) return NETWORK_COLORS.unichain[type]
 
   return NETWORK_COLORS.other[type]
 }
