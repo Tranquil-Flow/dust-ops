@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSwapProvider } from '@/utils/providers';
 import type { BridgeParams, SwapParams } from '@/utils/providers';
+// In demo mode, getSwapProvider() automatically returns MockSwapProvider — no extra wiring needed.
 
 interface QuoteRequestBody {
   fromChainId: number;

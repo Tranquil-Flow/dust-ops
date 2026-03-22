@@ -1,6 +1,7 @@
 'use client'
 
 import { stepAtom } from '@/atoms/walletAtoms'
+import { DemoBanner } from '@/components/DemoBanner'
 import { ProgressBar } from '@/components/sweeper/ProgressBar'
 import { SweeperHeader } from '@/components/sweeper/SweeperHeader'
 import { useAtomValue } from 'jotai'
@@ -48,6 +49,7 @@ export default function Layout({ children }: PropsWithChildren) {
 
   return (
     <div className={`fixed inset-0 text-white ${step === 0 ? 'overflow-hidden' : 'overflow-auto bg-dark-primary'}`}>
+      <DemoBanner />
       <div className='max-w-6xl mx-auto px-6 pb-12'>
         {step !== 0 && (
           <SweeperHeader

@@ -1,9 +1,15 @@
 import { CHAINS } from '../../config/chains';
+import { isDemoMode } from '../../config/demo';
 import { BlockscoutScanner } from './blockscout';
 import { EtherscanScanner } from './etherscan';
+import { MockScanner } from './mock';
 import type { ChainScanner } from './types';
 
 export function createScanner(chainId: number): ChainScanner {
+  if (isDemoMode()) {
+    return new MockScanner(chainId);
+  }
+
   const chain = CHAINS.find((c) => c.id === chainId);
   if (!chain) throw new Error(`Unsupported chain: ${chainId}`);
 

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CHAINS } from '../../../config/chains';
+import { isDemoMode } from '../../../config/demo';
 import { createScanner, type TokenBalance } from '../../../utils/scanners';
+// In demo mode, createScanner() automatically returns MockScanner — no extra wiring needed.
 
 /** Minimal Ethereum address validation: 0x + 40 hex chars */
 function isValidAddress(address: string): boolean {
@@ -76,5 +78,5 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     };
   });
 
-  return NextResponse.json({ results });
+  return NextResponse.json({ results, demo: isDemoMode() });
 }

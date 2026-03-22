@@ -129,3 +129,16 @@ These rules are non-negotiable. Violating them blocks the project from going to 
 - Never push to remote.
 - Commit after each completed task with a clear, descriptive message.
 - Keep commits atomic — one logical change per commit.
+
+---
+
+## Demo Mode
+
+Run the app in demo mode for development without external APIs:
+
+    NEXT_PUBLIC_DEMO_MODE=true yarn dev
+
+Or add `?demo=true` to any URL.
+
+Demo mode uses mock scanners and swap providers that return realistic fake data.
+All API routes automatically use mock backends when demo mode is active.
