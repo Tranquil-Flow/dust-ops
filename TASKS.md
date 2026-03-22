@@ -112,18 +112,18 @@
 ## Phase 2 — Testing
 
 ### Task 14: Test Infrastructure Setup
-- [ ] Install Vitest + jsdom + React Testing Library
-- [ ] Configure vitest.config.ts for Next.js app
-- [ ] Add `test` script to packages/app/package.json
+- [x] Install Vitest + jsdom + React Testing Library
+- [x] Configure vitest.config.ts for Next.js app
+- [x] Add `test` script to packages/app/package.json
 
 ### Task 15: Unit Tests — Chain Config & Atoms
-- [ ] Test chain registry: all 9 chains present, valid config shape
-- [ ] Test atom state transitions: token selection, destination changes, sweep state machine
+- [x] Test chain registry: all 9 chains present, valid config shape
+- [x] Test atom state transitions: token selection, destination changes, sweep state machine
 
 ### Task 16: Scanner Adapter Tests
-- [ ] Unit tests for `BlockscoutScanner` with mocked HTTP responses
-- [ ] Unit tests for `EtherscanScanner` with mocked HTTP responses
-- [ ] Test error handling: API timeouts, malformed responses, rate limits
+- [x] Unit tests for `BlockscoutScanner` with mocked HTTP responses
+- [x] Unit tests for `EtherscanScanner` with mocked HTTP responses
+- [x] Test error handling: API timeouts, malformed responses, rate limits
 
 ### Task 17: Fork Tests — Swap Execution
 - [ ] Set up Anvil fork test harness
@@ -132,10 +132,10 @@
 - [ ] Test bridge transaction construction
 
 ### Task 18: API Route Tests
-- [ ] Integration tests for `/api/scan` with mocked scanner adapters
-- [ ] Integration tests for `/api/quote` with mocked LI.FI responses
-- [ ] Test quote caching (30s TTL) behavior
-- [ ] Test error propagation and rate limit handling
+- [x] Integration tests for `/api/scan` with mocked scanner adapters
+- [x] Integration tests for `/api/quote` with mocked LI.FI responses
+- [x] Test quote caching (30s TTL) behavior
+- [x] Test error propagation and rate limit handling
 
 ---
 
