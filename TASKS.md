@@ -93,10 +93,10 @@
 - [ ] Remove fake Railgun countdown timer
 
 ### Task 12: Final Cleanup & Build Verification
-- [ ] Update page metadata and titles
-- [ ] Remove any remaining TODO/FIXME comments referencing hackathon
-- [ ] Verify `yarn build` compiles cleanly
-- [ ] Verify all pages render without errors in dev mode
+- [x] Update page metadata and titles
+- [x] Remove any remaining TODO/FIXME comments referencing hackathon
+- [x] Verify `yarn build` compiles cleanly
+- [ ] Verify all pages render without errors in dev mode (requires browser — manual)
 
 ### Task 13: Manual Smoke Test Checklist
 - [ ] App loads, WalletConnect modal appears on Step 0
