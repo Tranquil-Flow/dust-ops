@@ -59,53 +59,53 @@
 - [x] Document demo mode setup in CLAUDE.md
 
 ### Task 7: Wallet Connection (WalletConnect)
-- [ ] Replace private key input with Reown AppKit WalletConnect modal in Step 0
-- [ ] Create `useWalletCapabilities` hook — detect `wallet_sendCalls` (EIP-5792) support
-- [ ] Gate progress: if wallet lacks EIP-5792, show recommendation for Ambire/MetaMask 12+/Coinbase Wallet
-- [ ] Optional Ambire promotion banner for non-Ambire EIP-5792 wallets
+- [ ] Replace private key input with Reown AppKit WalletConnect modal in Step 0  <!-- BLOCKED: requires WALLETCONNECT_PROJECT_ID -->
+- [ ] Create `useWalletCapabilities` hook — detect `wallet_sendCalls` (EIP-5792) support  <!-- BLOCKED: requires WALLETCONNECT_PROJECT_ID -->
+- [ ] Gate progress: if wallet lacks EIP-5792, show recommendation for Ambire/MetaMask 12+/Coinbase Wallet  <!-- BLOCKED: requires WALLETCONNECT_PROJECT_ID -->
+- [ ] Optional Ambire promotion banner for non-Ambire EIP-5792 wallets  <!-- BLOCKED: requires WALLETCONNECT_PROJECT_ID -->
 
 ### Task 8: Scan Holdings Page Rewrite
-- [ ] Wire scan-holdings page to new `/api/scan` route
-- [ ] Show real-time parallel scan progress across 9 chains
-- [ ] Display token counts + values as they stream in
-- [ ] Auto-advance to token selection when scan completes
+- [ ] Wire scan-holdings page to new `/api/scan` route  <!-- BLOCKED: requires Task 7 -->
+- [ ] Show real-time parallel scan progress across 9 chains  <!-- BLOCKED: requires Task 7 -->
+- [ ] Display token counts + values as they stream in  <!-- BLOCKED: requires Task 7 -->
+- [ ] Auto-advance to token selection when scan completes  <!-- BLOCKED: requires Task 7 -->
 
 ### Task 9: Token Selection Page Rewrite
-- [ ] Wire to scanned token data from atoms
-- [ ] Add gas viability indicators: sweepable (selectable), uneconomic (greyed, "gas > value"), no-route (greyed, "no liquidity")
-- [ ] Add destination chain dropdown (9 chains)
-- [ ] Add destination address input (defaults to connected wallet)
-- [ ] Show total estimated value + gas + net proceeds
+- [ ] Wire to scanned token data from atoms  <!-- BLOCKED: requires Task 8 -->
+- [ ] Add gas viability indicators: sweepable (selectable), uneconomic (greyed, "gas > value"), no-route (greyed, "no liquidity")  <!-- BLOCKED: requires Task 8 -->
+- [ ] Add destination chain dropdown (9 chains)  <!-- BLOCKED: requires Task 8 -->
+- [ ] Add destination address input (defaults to connected wallet)  <!-- BLOCKED: requires Task 8 -->
+- [ ] Show total estimated value + gas + net proceeds  <!-- BLOCKED: requires Task 8 -->
 
 ### Task 10: Review & Execute — useSweep Hook
-- [ ] Create `useSweep` hook — orchestrate full sweep execution
-- [ ] Fetch fresh LI.FI quotes just-in-time on review page load
-- [ ] Show execution plan breakdown: per-token value, gas cost, net proceeds
-- [ ] Implement per-chain `wallet_sendCalls` batching: [approve + swap] × N per chain
-- [ ] Implement cross-chain bridge calls via LI.FI after same-chain swaps complete
-- [ ] Real-time progress UI replacing fake animation (chain-by-chain status)
-- [ ] Poll `wallet_getCallsStatus()` and LI.FI `/status` for completion tracking
+- [ ] Create `useSweep` hook — orchestrate full sweep execution  <!-- BLOCKED: requires Task 9 -->
+- [ ] Fetch fresh LI.FI quotes just-in-time on review page load  <!-- BLOCKED: requires Task 9 -->
+- [ ] Show execution plan breakdown: per-token value, gas cost, net proceeds  <!-- BLOCKED: requires Task 9 -->
+- [ ] Implement per-chain `wallet_sendCalls` batching: [approve + swap] × N per chain  <!-- BLOCKED: requires Task 9 -->
+- [ ] Implement cross-chain bridge calls via LI.FI after same-chain swaps complete  <!-- BLOCKED: requires Task 9 -->
+- [ ] Real-time progress UI replacing fake animation (chain-by-chain status)  <!-- BLOCKED: requires Task 9 -->
+- [ ] Poll `wallet_getCallsStatus()` and LI.FI `/status` for completion tracking  <!-- BLOCKED: requires Task 9 -->
 
 ### Task 11: Completion Page Simplification
-- [ ] Show real sweep results: total ETH swept, destination chain, destination address
-- [ ] Link to block explorer for destination address
-- [ ] "Start New Sweep" button (reset atoms, return to Step 0)
-- [ ] Remove fake Railgun countdown timer
+- [ ] Show real sweep results: total ETH swept, destination chain, destination address  <!-- BLOCKED: requires Task 10 -->
+- [ ] Link to block explorer for destination address  <!-- BLOCKED: requires Task 10 -->
+- [ ] "Start New Sweep" button (reset atoms, return to Step 0)  <!-- BLOCKED: requires Task 10 -->
+- [ ] Remove fake Railgun countdown timer  <!-- BLOCKED: requires Task 10 -->
 
 ### Task 12: Final Cleanup & Build Verification
 - [x] Update page metadata and titles
 - [x] Remove any remaining TODO/FIXME comments referencing hackathon
 - [x] Verify `yarn build` compiles cleanly
-- [ ] Verify all pages render without errors in dev mode (requires browser — manual)
+- [ ] Verify all pages render without errors in dev mode  <!-- BLOCKED: requires browser + manual testing -->
 
 ### Task 13: Manual Smoke Test Checklist
-- [ ] App loads, WalletConnect modal appears on Step 0
-- [ ] EIP-5792 capability detection works (gate or proceed)
-- [ ] Scan page fetches tokens from at least 1 chain
-- [ ] Token selection correctly classifies sweepable vs uneconomic
-- [ ] Review page shows fresh quotes
-- [ ] All step transitions work correctly
-- [ ] No console errors in production build
+- [ ] App loads, WalletConnect modal appears on Step 0  <!-- BLOCKED: requires browser + WALLETCONNECT_PROJECT_ID -->
+- [ ] EIP-5792 capability detection works (gate or proceed)  <!-- BLOCKED: requires browser + wallet extension -->
+- [ ] Scan page fetches tokens from at least 1 chain  <!-- BLOCKED: requires browser + API keys -->
+- [ ] Token selection correctly classifies sweepable vs uneconomic  <!-- BLOCKED: requires browser + API keys -->
+- [ ] Review page shows fresh quotes  <!-- BLOCKED: requires browser + API keys -->
+- [ ] All step transitions work correctly  <!-- BLOCKED: requires browser -->
+- [ ] No console errors in production build  <!-- BLOCKED: requires browser -->
 
 ---
 
@@ -126,10 +126,10 @@
 - [x] Test error handling: API timeouts, malformed responses, rate limits
 
 ### Task 17: Fork Tests — Swap Execution
-- [ ] Set up Anvil fork test harness
-- [ ] Test LI.FI quote fetching against forked mainnet
-- [ ] Test `wallet_sendCalls` batching logic (approve + swap sequence)
-- [ ] Test bridge transaction construction
+- [ ] Set up Anvil fork test harness  <!-- BLOCKED: requires RPC endpoint -->
+- [ ] Test LI.FI quote fetching against forked mainnet  <!-- BLOCKED: requires RPC endpoint -->
+- [ ] Test `wallet_sendCalls` batching logic (approve + swap sequence)  <!-- BLOCKED: requires RPC endpoint -->
+- [ ] Test bridge transaction construction  <!-- BLOCKED: requires RPC endpoint -->
 
 ### Task 18: API Route Tests
 - [x] Integration tests for `/api/scan` with mocked scanner adapters
