@@ -59,10 +59,10 @@
 - [x] Document demo mode setup in CLAUDE.md
 
 ### Task 7: Wallet Connection (WalletConnect)
-- [ ] Replace private key input with Reown AppKit WalletConnect modal in Step 0  <!-- BLOCKED: requires WALLETCONNECT_PROJECT_ID -->
-- [ ] Create `useWalletCapabilities` hook — detect `wallet_sendCalls` (EIP-5792) support  <!-- BLOCKED: requires WALLETCONNECT_PROJECT_ID -->
-- [ ] Gate progress: if wallet lacks EIP-5792, show recommendation for Ambire/MetaMask 12+/Coinbase Wallet  <!-- BLOCKED: requires WALLETCONNECT_PROJECT_ID -->
-- [ ] Optional Ambire promotion banner for non-Ambire EIP-5792 wallets  <!-- BLOCKED: requires WALLETCONNECT_PROJECT_ID -->
+- [x] Replace private key input with Reown AppKit WalletConnect modal in Step 0 (was already done in Task 1 cleanup — AppKit w3m-button already wired)
+- [x] Create `useWalletCapabilities` hook — detect `wallet_sendCalls` (EIP-5792) support
+- [x] Gate progress: if wallet lacks EIP-5792, show recommendation for Ambire/MetaMask 12+/Coinbase Wallet
+- [x] Optional Ambire promotion banner for non-Ambire EIP-5792 wallets
 
 ### Task 8: Scan Holdings Page Rewrite
 - [ ] Wire scan-holdings page to new `/api/scan` route  <!-- BLOCKED: requires Task 7 -->
