@@ -65,10 +65,10 @@
 - [x] Optional Ambire promotion banner for non-Ambire EIP-5792 wallets
 
 ### Task 8: Scan Holdings Page Rewrite
-- [ ] Wire scan-holdings page to new `/api/scan` route  <!-- BLOCKED: requires Task 7 -->
-- [ ] Show real-time parallel scan progress across 9 chains  <!-- BLOCKED: requires Task 7 -->
-- [ ] Display token counts + values as they stream in  <!-- BLOCKED: requires Task 7 -->
-- [ ] Auto-advance to token selection when scan completes  <!-- BLOCKED: requires Task 7 -->
+- [x] Wire scan-holdings page to new `/api/scan` route
+- [x] Show real-time parallel scan progress across 9 chains
+- [x] Display token counts + values as they stream in
+- [x] Auto-advance to token selection when scan completes
 
 ### Task 9: Token Selection Page Rewrite
 - [ ] Wire to scanned token data from atoms  <!-- BLOCKED: requires Task 8 -->
