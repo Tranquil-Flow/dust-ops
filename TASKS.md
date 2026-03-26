@@ -78,19 +78,19 @@
 - [x] Show total estimated value + gas + net proceeds
 
 ### Task 10: Review & Execute — useSweep Hook
-- [ ] Create `useSweep` hook — orchestrate full sweep execution  <!-- BLOCKED: requires Task 9 -->
-- [ ] Fetch fresh LI.FI quotes just-in-time on review page load  <!-- BLOCKED: requires Task 9 -->
-- [ ] Show execution plan breakdown: per-token value, gas cost, net proceeds  <!-- BLOCKED: requires Task 9 -->
-- [ ] Implement per-chain `wallet_sendCalls` batching: [approve + swap] × N per chain  <!-- BLOCKED: requires Task 9 -->
-- [ ] Implement cross-chain bridge calls via LI.FI after same-chain swaps complete  <!-- BLOCKED: requires Task 9 -->
-- [ ] Real-time progress UI replacing fake animation (chain-by-chain status)  <!-- BLOCKED: requires Task 9 -->
-- [ ] Poll `wallet_getCallsStatus()` and LI.FI `/status` for completion tracking  <!-- BLOCKED: requires Task 9 -->
+- [x] Create `useSweep` hook — orchestrate full sweep execution
+- [x] Fetch fresh LI.FI quotes just-in-time on review page load
+- [x] Show execution plan breakdown: per-token value, gas cost, net proceeds
+- [x] Implement per-chain `wallet_sendCalls` batching: [approve + swap] × N per chain
+- [x] Implement cross-chain bridge calls via LI.FI after same-chain swaps complete
+- [x] Real-time progress UI replacing fake animation (chain-by-chain status)
+- [x] Poll `wallet_getCallsStatus()` and LI.FI `/status` for completion tracking
 
 ### Task 11: Completion Page Simplification
-- [ ] Show real sweep results: total ETH swept, destination chain, destination address  <!-- BLOCKED: requires Task 10 -->
-- [ ] Link to block explorer for destination address  <!-- BLOCKED: requires Task 10 -->
-- [ ] "Start New Sweep" button (reset atoms, return to Step 0)  <!-- BLOCKED: requires Task 10 -->
-- [ ] Remove fake Railgun countdown timer  <!-- BLOCKED: requires Task 10 -->
+- [x] Show real sweep results: total ETH swept, destination chain, destination address
+- [x] Link to block explorer for destination address
+- [x] "Start New Sweep" button (reset atoms, return to Step 0)
+- [x] Remove fake Railgun countdown timer
 
 ### Task 12: Final Cleanup & Build Verification
 - [x] Update page metadata and titles
