@@ -71,11 +71,11 @@
 - [x] Auto-advance to token selection when scan completes
 
 ### Task 9: Token Selection Page Rewrite
-- [ ] Wire to scanned token data from atoms  <!-- BLOCKED: requires Task 8 -->
-- [ ] Add gas viability indicators: sweepable (selectable), uneconomic (greyed, "gas > value"), no-route (greyed, "no liquidity")  <!-- BLOCKED: requires Task 8 -->
-- [ ] Add destination chain dropdown (9 chains)  <!-- BLOCKED: requires Task 8 -->
-- [ ] Add destination address input (defaults to connected wallet)  <!-- BLOCKED: requires Task 8 -->
-- [ ] Show total estimated value + gas + net proceeds  <!-- BLOCKED: requires Task 8 -->
+- [x] Wire to scanned token data from atoms
+- [x] Add gas viability indicators: sweepable (selectable), uneconomic (greyed, "gas > value"), no-route (greyed, "no liquidity")
+- [x] Add destination chain dropdown (9 chains)
+- [x] Add destination address input (defaults to connected wallet)
+- [x] Show total estimated value + gas + net proceeds
 
 ### Task 10: Review & Execute — useSweep Hook
 - [ ] Create `useSweep` hook — orchestrate full sweep execution  <!-- BLOCKED: requires Task 9 -->
