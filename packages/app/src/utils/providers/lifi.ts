@@ -8,8 +8,7 @@ import type {
   SwapProvider,
   TxStatus,
 } from './types';
-
-const NATIVE_TOKEN_ADDRESS = '0x0000000000000000000000000000000000000000';
+import { NATIVE_TOKEN_ADDRESS } from '@/config/types';
 
 function mapStatusMessage(status: string): TxStatus {
   switch (status) {

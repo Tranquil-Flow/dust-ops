@@ -1,6 +1,5 @@
 import type { ChainScanner, TokenBalance } from './types';
-
-const NATIVE_TOKEN_ADDRESS = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
+import { NATIVE_TOKEN_ADDRESS } from '@/config/types';
 
 interface EtherscanBaseResponse {
   status: string;

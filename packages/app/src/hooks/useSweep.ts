@@ -11,8 +11,7 @@ import {
   scannedTokensAtom,
 } from '@/atoms/walletAtoms'
 import type { ScannedToken, Quote, SweepPlan, SweepState, ChainSweepState } from '@/config/types'
-
-const NATIVE_TOKEN_ADDRESS = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
+import { NATIVE_TOKEN_ADDRESS, isNativeToken } from '@/config/types'
 
 const erc20ApproveAbi = [
   {
@@ -65,7 +64,7 @@ export function useSweep() {
 
     try {
       const quotePromises = selectedTokens.map(async (token: ScannedToken): Promise<Quote | null> => {
-        const isNative = token.address === '0x0'
+        const isNative = isNativeToken(token.address)
         const quoteType = token.chainId === destination.chainId ? 'swap' : 'bridge'
 
         try {
@@ -190,10 +189,8 @@ export function useSweep() {
         const calls: Array<{ to: `0x${string}`; data?: `0x${string}`; value?: `0x${string}` }> = []
 
         for (const q of chainQuotes) {
-          // ERC-20 approval (skip native tokens — address '0x0' or NATIVE_TOKEN_ADDRESS)
-          const isNative =
-            q.fromToken === '0x0' ||
-            q.fromToken.toLowerCase() === NATIVE_TOKEN_ADDRESS.toLowerCase()
+          // ERC-20 approval (skip native tokens — use isNativeToken() guard)
+          const isNative = isNativeToken(q.fromToken)
 
           if (!isNative && q.approvalAddress) {
             // Find matching token to get the balance as the approval amount

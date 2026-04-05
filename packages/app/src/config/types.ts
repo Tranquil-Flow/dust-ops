@@ -1,6 +1,23 @@
 export type GasTier = 'high' | 'low' | 'ultra-low';
 export type ExplorerType = 'blockscout' | 'etherscan';
 
+/**
+ * Canonical sentinel address for native gas tokens (ETH, POL, etc.)
+ * Used by LI.FI, 1inch, and most EVM aggregators.
+ * All scanner adapters, swap providers, and the sweep hook must use this constant —
+ * never use '0x0', AddressZero, or any other zero address to represent native tokens.
+ */
+export const NATIVE_TOKEN_ADDRESS =
+  '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' as const;
+
+/**
+ * Type guard: returns true if the given address represents the native gas token.
+ * Use this everywhere instead of ad-hoc address comparisons.
+ */
+export function isNativeToken(address: string): boolean {
+  return address.toLowerCase() === NATIVE_TOKEN_ADDRESS.toLowerCase();
+}
+
 export interface ExplorerApiConfig {
   type: ExplorerType;
   url: string;

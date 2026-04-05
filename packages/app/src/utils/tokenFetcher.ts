@@ -1,4 +1,5 @@
 import { base, optimism, unichain } from 'viem/chains'
+import { NATIVE_TOKEN_ADDRESS } from '@/config/types'
 
 type ApiToken = {
   balance: string
@@ -144,7 +145,7 @@ export async function fetchTokensFromAPIs(
               type: 'Native',
               chain: 'Base',
               chainId: base.id,
-              contractAddress: '0x0000000000000000000000000000000000000000', // Native token placeholder
+              contractAddress: NATIVE_TOKEN_ADDRESS, // Canonical native token sentinel
             })
             console.log('Found native ETH balance on Base:', balance)
           }
@@ -206,7 +207,7 @@ export async function fetchTokensFromAPIs(
               type: 'Native',
               chain: 'Optimism',
               chainId: optimism.id,
-              contractAddress: '0x0000000000000000000000000000000000000000', // Native token placeholder
+              contractAddress: NATIVE_TOKEN_ADDRESS, // Canonical native token sentinel
             })
             console.log('Found native ETH balance on Optimism:', balance)
           }
@@ -268,7 +269,7 @@ export async function fetchTokensFromAPIs(
               type: 'Native',
               chain: 'Unichain',
               chainId: unichain.id,
-              contractAddress: '0x0000000000000000000000000000000000000000', // Native token placeholder
+              contractAddress: NATIVE_TOKEN_ADDRESS, // Canonical native token sentinel
             })
             console.log('Found native ETH balance on Unichain:', balance)
           }
