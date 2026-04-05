@@ -2,7 +2,6 @@
 
 import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { useAccount, useWalletClient } from 'wagmi'
-import { encodeFunctionData } from 'viem'
 import {
   selectedTokensAtom,
   destinationAtom,
@@ -12,19 +11,7 @@ import {
 } from '@/atoms/walletAtoms'
 import type { ScannedToken, Quote, SweepPlan, SweepState, ChainSweepState } from '@/config/types'
 import { NATIVE_TOKEN_ADDRESS, isNativeToken } from '@/config/types'
-
-const erc20ApproveAbi = [
-  {
-    name: 'approve',
-    type: 'function',
-    inputs: [
-      { name: 'spender', type: 'address' },
-      { name: 'amount', type: 'uint256' },
-    ],
-    outputs: [{ type: 'bool' }],
-    stateMutability: 'nonpayable',
-  },
-] as const
+import { executeAllChainsSweep } from '@/utils/sweepExecution'
 
 export function useSweep() {
   const { address } = useAccount()
@@ -131,14 +118,19 @@ export function useSweep() {
   }
 
   // -------------------------------------------------------------------------
-  // executeSweep — group by chain, batch EIP-5792 wallet_sendCalls per chain
+  // executeSweep — group by chain, execute all chains IN PARALLEL
+  //
+  // Each chain fires its own wallet_sendCalls batch simultaneously.
+  // Per-chain state is tracked independently in sweepStateAtom.chains.
+  // A failure on one chain does not cancel others (Promise.allSettled).
+  // Each chain has a 5-minute timeout.
   // -------------------------------------------------------------------------
   async function executeSweep(): Promise<void> {
     if (!address || !walletClient || !sweepPlan) return
 
     const { quotes, destinationChainId, destinationAddress } = sweepPlan
 
-    // Group quotes by fromChainId
+    // Group quotes by fromChainId to build initial chain states
     const byChain = new Map<number, Quote[]>()
     for (const q of quotes) {
       const arr = byChain.get(q.fromChainId) ?? []
@@ -148,7 +140,8 @@ export function useSweep() {
 
     const chainIds = Array.from(byChain.keys())
 
-    // Build initial chain states
+    // Build initial chain states (all start idle — individual chains transition to
+    // approving immediately when their sweepSingleChain call begins)
     const initialChainStates: ChainSweepState[] = chainIds.map((chainId) => ({
       chainId,
       phase: 'idle' as const,
@@ -166,8 +159,9 @@ export function useSweep() {
       netProceedsUsd: sweepPlan.netProceedsUsd,
     })
 
+    /** Patch a single chain's state within the global sweepStateAtom */
     const updateChainState = (chainId: number, patch: Partial<ChainSweepState>) => {
-      setSweepState((prev) => {
+      setSweepState((prev: SweepState | null) => {
         if (!prev) return prev
         return {
           ...prev,
@@ -178,173 +172,28 @@ export function useSweep() {
       })
     }
 
-    try {
-      for (const chainId of chainIds) {
-        const chainQuotes = byChain.get(chainId)!
+    // Wrap walletClient.request for the utility function
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const walletRequest = (params: { method: string; params?: any[] }) =>
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (walletClient as any).request(params)
 
-        updateChainState(chainId, { phase: 'approving' })
+    // Execute all chains in parallel — allSettled so one failure doesn't abort others
+    const results = await executeAllChainsSweep({
+      quotes,
+      sweepPlan,
+      address,
+      walletRequest,
+      destinationChainId,
+      updateChainState,
+    })
 
-        // Build calls: approvals first, then swaps/bridges
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const calls: Array<{ to: `0x${string}`; data?: `0x${string}`; value?: `0x${string}` }> = []
+    // Determine overall outcome
+    const anyFailed = results.some((r) => !r.success)
 
-        for (const q of chainQuotes) {
-          // ERC-20 approval (skip native tokens — use isNativeToken() guard)
-          const isNative = isNativeToken(q.fromToken)
-
-          if (!isNative && q.approvalAddress) {
-            // Find matching token to get the balance as the approval amount
-            const token = sweepPlan.selectedTokens.find(
-              (t) =>
-                t.chainId === chainId &&
-                t.address.toLowerCase() === q.fromToken.toLowerCase()
-            )
-            const amount = token ? token.balance : BigInt(q.fromAmount)
-
-            const approvalData = encodeFunctionData({
-              abi: erc20ApproveAbi,
-              functionName: 'approve',
-              args: [q.approvalAddress as `0x${string}`, amount],
-            })
-
-            calls.push({
-              to: q.fromToken as `0x${string}`,
-              data: approvalData,
-            })
-          }
-
-          // Swap / bridge transaction
-          calls.push({
-            to: q.transactionRequest.to as `0x${string}`,
-            data: q.transactionRequest.data as `0x${string}`,
-            value: q.transactionRequest.value
-              ? (`0x${BigInt(q.transactionRequest.value).toString(16)}` as `0x${string}`)
-              : undefined,
-          })
-        }
-
-        // Submit batch via EIP-5792
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const callsId = await (walletClient as any).request({
-          method: 'wallet_sendCalls',
-          params: [
-            {
-              version: '1.0',
-              chainId: `0x${chainId.toString(16)}`,
-              from: address,
-              calls,
-            },
-          ],
-        })
-
-        updateChainState(chainId, { phase: 'swapping' })
-
-        // Poll wallet_getCallsStatus until status 200 (complete)
-        let txHash: string | undefined
-        // eslint-disable-next-line no-constant-condition
-        while (true) {
-          await sleep(2000)
-
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const status = await (walletClient as any).request({
-            method: 'wallet_getCallsStatus',
-            params: [callsId],
-          })
-
-          // status.statusCode: 100 = pending, 200 = complete
-          if (status?.statusCode === 200 || status?.status === 200) {
-            // Extract txHash from the first receipt
-            const receipts = status.receipts ?? []
-            if (receipts.length > 0) {
-              txHash = receipts[receipts.length - 1]?.transactionHash
-            }
-            break
-          }
-
-          if (status?.statusCode >= 400 || status?.status >= 400) {
-            throw new Error(`Batch failed on chain ${chainId} with status ${status?.statusCode ?? status?.status}`)
-          }
-        }
-
-        updateChainState(chainId, { txHash })
-
-        // For bridge quotes: poll /api/status until complete
-        const bridgeQuotes = chainQuotes.filter((q) => q.type === 'bridge')
-        if (bridgeQuotes.length > 0 && txHash) {
-          updateChainState(chainId, { phase: 'bridging' })
-
-          // Poll status for the bridge
-          let bridgeDone = false
-          let retries = 0
-          const MAX_BRIDGE_RETRIES = 60 // up to 2 minutes
-
-          while (!bridgeDone && retries < MAX_BRIDGE_RETRIES) {
-            await sleep(2000)
-            retries++
-
-            try {
-              const statusRes = await fetch('/api/status', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  txHash,
-                  fromChainId: chainId,
-                  toChainId: destinationChainId,
-                }),
-              })
-
-              if (statusRes.ok) {
-                const statusData = await statusRes.json()
-                // LI.FI status: DONE, FAILED, PENDING
-                if (statusData?.status === 'DONE') {
-                  bridgeDone = true
-                } else if (statusData?.status === 'FAILED') {
-                  throw new Error(`Bridge failed on chain ${chainId}`)
-                }
-              }
-            } catch (err) {
-              // Ignore transient status errors during polling
-              console.warn('Bridge status poll error:', err)
-            }
-          }
-
-          if (!bridgeDone) {
-            console.warn(`Bridge polling timed out for chain ${chainId}`)
-          }
-        }
-
-        updateChainState(chainId, { phase: 'complete', tokensCompleted: chainQuotes.length })
-      }
-
-      // All chains done
-      setSweepState((prev) => prev ? { ...prev, phase: 'complete' } : null)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error during sweep'
-      console.error('executeSweep failed:', err)
-      setSweepState((prev) =>
-        prev
-          ? { ...prev, phase: 'error' }
-          : {
-              phase: 'error',
-              chains: [],
-              destinationChainId,
-              destinationAddress,
-              totalValueUsd: sweepPlan.totalValueUsd,
-              totalGasUsd: sweepPlan.totalGasUsd,
-              netProceedsUsd: sweepPlan.netProceedsUsd,
-            }
-      )
-      // Mark any still-running chain as error
-      setSweepState((prev) => {
-        if (!prev) return prev
-        return {
-          ...prev,
-          chains: prev.chains.map((cs) =>
-            cs.phase !== 'complete' ? { ...cs, phase: 'error', error: message } : cs
-          ),
-        }
-      })
-    }
+    setSweepState((prev: SweepState | null) =>
+      prev ? { ...prev, phase: anyFailed ? 'error' : 'complete' } : null
+    )
   }
 
   // -------------------------------------------------------------------------
@@ -367,11 +216,4 @@ export function useSweep() {
     isQuoting,
     isExecuting,
   }
-}
-
-// ---------------------------------------------------------------------------
-// Utility
-// ---------------------------------------------------------------------------
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
 }
