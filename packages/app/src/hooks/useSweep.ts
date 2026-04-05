@@ -9,13 +9,16 @@ import {
   sweepStateAtom,
   scannedTokensAtom,
 } from '@/atoms/walletAtoms'
-import type { ScannedToken, Quote, SweepPlan, SweepState, ChainSweepState } from '@/config/types'
+import type { ScannedToken, Quote, SweepMode, SweepPlan, SweepState, ChainSweepState } from '@/config/types'
 import { NATIVE_TOKEN_ADDRESS, isNativeToken } from '@/config/types'
 import { executeAllChainsSweep } from '@/utils/sweepExecution'
+import { useWalletCapabilities } from '@/hooks/useWalletCapabilities'
 
 export function useSweep() {
   const { address } = useAccount()
   const { data: walletClient } = useWalletClient()
+  const { supportsEIP5792 } = useWalletCapabilities()
+  const sweepMode: SweepMode = supportsEIP5792 ? 'batch' : 'sequential'
   const selectedTokens = useAtomValue(selectedTokensAtom)
   const destination = useAtomValue(destinationAtom)
   const [sweepPlan, setSweepPlan] = useAtom(sweepPlanAtom)
@@ -183,6 +186,8 @@ export function useSweep() {
       (walletClient as any).request(params)
 
     // Execute all chains in parallel — allSettled so one failure doesn't abort others
+    // In sequential mode, each chain's approve+swap calls fire one at a time per chain,
+    // but multiple chains still run in parallel with each other.
     const results = await executeAllChainsSweep({
       quotes,
       sweepPlan,
@@ -190,6 +195,7 @@ export function useSweep() {
       walletRequest,
       destinationChainId,
       updateChainState,
+      sweepMode,
     })
 
     // Determine overall outcome
@@ -219,5 +225,7 @@ export function useSweep() {
     resetSweep,
     isQuoting,
     isExecuting,
+    /** Current execution mode — reflects wallet EIP-5792 capability detection */
+    sweepMode,
   }
 }

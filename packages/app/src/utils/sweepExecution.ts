@@ -10,7 +10,7 @@
  */
 
 import { encodeFunctionData } from 'viem'
-import type { ChainSweepState, Quote, SweepPlan } from '@/config/types'
+import type { ChainSweepState, Quote, SweepMode, SweepPlan } from '@/config/types'
 import { isNativeToken } from '@/config/types'
 
 // ---------------------------------------------------------------------------
@@ -250,6 +250,230 @@ export async function sweepSingleChain(opts: {
 }
 
 // ---------------------------------------------------------------------------
+// Sequential sweep (non-EIP-5792 fallback)
+// ---------------------------------------------------------------------------
+
+/**
+ * Wait for an Ethereum transaction to be mined by polling eth_getTransactionReceipt.
+ *
+ * @returns The transaction receipt once confirmed
+ * @throws  If the deadline is exceeded before the tx is mined
+ */
+export async function waitForReceipt(opts: {
+  txHash: string
+  walletRequest: WalletRequestFn
+  sleepFn: (ms: number) => Promise<void>
+  deadline: number
+  pollIntervalMs?: number
+}): Promise<{ status: string }> {
+  const { txHash, walletRequest, sleepFn, deadline, pollIntervalMs = POLL_INTERVAL_MS } = opts
+
+  while (true) {
+    if (Date.now() > deadline) {
+      throw new Error(`Transaction ${txHash} not mined before deadline`)
+    }
+    await sleepFn(pollIntervalMs)
+
+    let receipt: { status?: string } | null = null
+    try {
+      receipt = await walletRequest({
+        method: 'eth_getTransactionReceipt',
+        params: [txHash],
+      })
+    } catch {
+      // Transient RPC error — keep polling
+    }
+
+    if (receipt) {
+      // EIP status: '0x1' = success, '0x0' = reverted
+      if (receipt.status === '0x0') {
+        throw new Error(`Transaction ${txHash} reverted on-chain`)
+      }
+      return receipt as { status: string }
+    }
+  }
+}
+
+/**
+ * Sequential sweep fallback for wallets without EIP-5792 (wallet_sendCalls).
+ *
+ * Executes approve + swap as individual eth_sendTransaction calls, waiting for
+ * each to be mined before submitting the next. This gives the user per-step
+ * wallet confirmation prompts.
+ *
+ * On user rejection (wallet throws with "rejected" / "denied" keyword), the
+ * error is re-thrown with `reason: 'user_rejected'` so callers can offer
+ * Resume/Cancel without marking the sweep as permanently failed.
+ */
+export async function sweepSingleChainSequential(opts: {
+  chainId: number
+  chainQuotes: Quote[]
+  sweepPlan: SweepPlan
+  address: string
+  walletRequest: WalletRequestFn
+  destinationChainId: number
+  updateChainState: UpdateChainStateFn
+  fetchFn?: typeof fetch
+  sleepFn?: (ms: number) => Promise<void>
+  chainTimeoutMs?: number
+  maxBridgeRetries?: number
+}): Promise<void> {
+  const {
+    chainId,
+    chainQuotes,
+    sweepPlan,
+    address,
+    walletRequest,
+    destinationChainId,
+    updateChainState,
+    fetchFn = fetch,
+    sleepFn = (ms) => new Promise((r) => setTimeout(r, ms)),
+    chainTimeoutMs = CHAIN_TIMEOUT_MS,
+    maxBridgeRetries = MAX_BRIDGE_RETRIES,
+  } = opts
+
+  const deadline = Date.now() + chainTimeoutMs
+
+  const checkTimeout = () => {
+    if (Date.now() > deadline) {
+      throw new Error(`Chain ${chainId} sweep timed out after ${chainTimeoutMs / 1000}s`)
+    }
+  }
+
+  updateChainState(chainId, { phase: 'approving' })
+
+  let lastSwapTxHash: string | undefined
+
+  for (let i = 0; i < chainQuotes.length; i++) {
+    const q = chainQuotes[i]
+    const isNative = isNativeToken(q.fromToken)
+
+    // ── Step 1: ERC-20 approval (skip for native tokens) ──────────────────
+    if (!isNative && q.approvalAddress) {
+      checkTimeout()
+
+      const token = sweepPlan.selectedTokens.find(
+        (t) => t.chainId === chainId && t.address.toLowerCase() === q.fromToken.toLowerCase()
+      )
+      const amount = token ? token.balance : BigInt(q.fromAmount)
+
+      const approvalData = encodeFunctionData({
+        abi: erc20ApproveAbi,
+        functionName: 'approve',
+        args: [q.approvalAddress as `0x${string}`, amount],
+      })
+
+      let approvalTxHash: string
+      try {
+        approvalTxHash = await walletRequest({
+          method: 'eth_sendTransaction',
+          params: [
+            {
+              from: address,
+              to: q.fromToken,
+              data: approvalData,
+              value: '0x0',
+            },
+          ],
+        })
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        if (/rejected|denied|cancel/i.test(msg)) {
+          const rejection = new Error(`User rejected approval for token ${q.fromToken}`)
+          ;(rejection as Error & { reason: string }).reason = 'user_rejected'
+          throw rejection
+        }
+        throw err
+      }
+
+      await waitForReceipt({ txHash: approvalTxHash, walletRequest, sleepFn, deadline })
+    }
+
+    // ── Step 2: Swap / bridge transaction ─────────────────────────────────
+    checkTimeout()
+    updateChainState(chainId, { phase: 'swapping' })
+
+    const valueWei = q.transactionRequest.value ? BigInt(q.transactionRequest.value) : 0n
+
+    let swapTxHash: string
+    try {
+      swapTxHash = await walletRequest({
+        method: 'eth_sendTransaction',
+        params: [
+          {
+            from: address,
+            to: q.transactionRequest.to,
+            data: q.transactionRequest.data,
+            value: `0x${valueWei.toString(16)}`,
+          },
+        ],
+      })
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      if (/rejected|denied|cancel/i.test(msg)) {
+        const rejection = new Error(`User rejected swap for token ${q.fromToken} (step ${i + 1}/${chainQuotes.length})`)
+        ;(rejection as Error & { reason: string }).reason = 'user_rejected'
+        throw rejection
+      }
+      throw err
+    }
+
+    await waitForReceipt({ txHash: swapTxHash, walletRequest, sleepFn, deadline })
+    lastSwapTxHash = swapTxHash
+
+    updateChainState(chainId, {
+      txHash: swapTxHash,
+      tokensCompleted: i + 1,
+    })
+  }
+
+  // ── Bridge polling (cross-chain quotes) ───────────────────────────────────
+  const bridgeQuotes = chainQuotes.filter((q) => q.type === 'bridge')
+  if (bridgeQuotes.length > 0 && lastSwapTxHash) {
+    updateChainState(chainId, { phase: 'bridging' })
+
+    let bridgeDone = false
+    let retries = 0
+
+    while (!bridgeDone && retries < maxBridgeRetries) {
+      checkTimeout()
+      await sleepFn(POLL_INTERVAL_MS)
+      retries++
+
+      try {
+        const statusRes = await fetchFn('/api/status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            txHash: lastSwapTxHash,
+            fromChainId: chainId,
+            toChainId: destinationChainId,
+          }),
+        })
+
+        if (statusRes.ok) {
+          const statusData = await statusRes.json()
+          if (statusData?.status === 'DONE') {
+            bridgeDone = true
+          } else if (statusData?.status === 'FAILED') {
+            throw new Error(`Bridge failed on chain ${chainId}`)
+          }
+        }
+      } catch (err) {
+        if (err instanceof Error && err.message.startsWith('Bridge failed')) throw err
+        console.warn('Bridge status poll error:', err)
+      }
+    }
+
+    if (!bridgeDone) {
+      console.warn(`Bridge polling timed out for chain ${chainId} (retries: ${retries})`)
+    }
+  }
+
+  updateChainState(chainId, { phase: 'complete', tokensCompleted: chainQuotes.length })
+}
+
+// ---------------------------------------------------------------------------
 // Parallel orchestrator
 // ---------------------------------------------------------------------------
 
@@ -264,6 +488,12 @@ export interface ExecuteAllChainsOpts {
   sleepFn?: (ms: number) => Promise<void>
   chainTimeoutMs?: number
   maxBridgeRetries?: number
+  /**
+   * Sweep execution mode:
+   *   `batch`      — EIP-5792 wallet_sendCalls (default)
+   *   `sequential` — individual eth_sendTransaction fallback
+   */
+  sweepMode?: SweepMode
 }
 
 export interface ChainResult {
@@ -278,12 +508,18 @@ export interface ChainResult {
  * Uses Promise.allSettled so a failure on one chain does not prevent others
  * from completing. Each chain tracks its own state via updateChainState.
  *
+ * When `sweepMode` is `'sequential'`, each chain executes approve+swap via
+ * individual eth_sendTransaction calls instead of EIP-5792 wallet_sendCalls.
+ * Chains are still dispatched in parallel — it is within each chain that the
+ * transactions are sequential (approve → wait → swap → wait).
+ *
  * Returns a summary of per-chain results.
  */
 export async function executeAllChainsSweep(
   opts: ExecuteAllChainsOpts
 ): Promise<ChainResult[]> {
   const { quotes, sweepPlan, address, walletRequest, destinationChainId, updateChainState } = opts
+  const sweepMode = opts.sweepMode ?? 'batch'
 
   // Group quotes by source chain
   const byChain = new Map<number, Quote[]>()
@@ -295,23 +531,30 @@ export async function executeAllChainsSweep(
 
   const chainIds = Array.from(byChain.keys())
 
-  // Fire all chains simultaneously
+  const sharedOpts = {
+    sweepPlan,
+    address,
+    walletRequest,
+    destinationChainId,
+    updateChainState,
+    fetchFn: opts.fetchFn,
+    sleepFn: opts.sleepFn,
+    chainTimeoutMs: opts.chainTimeoutMs,
+    maxBridgeRetries: opts.maxBridgeRetries,
+  }
+
+  // Fire all chains simultaneously (within each chain, sequential mode is applied per-step)
   const settled = await Promise.allSettled(
-    chainIds.map((chainId) =>
-      sweepSingleChain({
+    chainIds.map((chainId) => {
+      const chainOpts = {
+        ...sharedOpts,
         chainId,
         chainQuotes: byChain.get(chainId)!,
-        sweepPlan,
-        address,
-        walletRequest,
-        destinationChainId,
-        updateChainState,
-        fetchFn: opts.fetchFn,
-        sleepFn: opts.sleepFn,
-        chainTimeoutMs: opts.chainTimeoutMs,
-        maxBridgeRetries: opts.maxBridgeRetries,
-      })
-    )
+      }
+      return sweepMode === 'sequential'
+        ? sweepSingleChainSequential(chainOpts)
+        : sweepSingleChain(chainOpts)
+    })
   )
 
   return chainIds.map((chainId, i) => {

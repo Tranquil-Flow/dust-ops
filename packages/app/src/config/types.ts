@@ -92,6 +92,13 @@ export type SweepPhase =
   | 'complete'
   | 'error';
 
+/**
+ * Sweep execution mode.
+ *  - `batch`      — EIP-5792 wallet_sendCalls (default, requires modern wallet)
+ *  - `sequential` — Individual eth_sendTransaction calls for older wallets
+ */
+export type SweepMode = 'batch' | 'sequential';
+
 export interface ChainSweepState {
   chainId: number;
   phase: SweepPhase;
