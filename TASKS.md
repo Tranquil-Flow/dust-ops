@@ -223,16 +223,19 @@ They are code-level issues that can be resolved without external API keys or a b
 ## Phase 4 — Expansion
 
 ### Task 23: Additional Chain API Keys + Config
-- [ ] Add Gnosis Chain to `src/config/chains.ts` (chainId 100, Gnosisscan explorer)
-- [ ] Add BNB Chain (BSC) (chainId 56, Bscscan explorer)
-- [ ] Add Avalanche C-Chain (chainId 43114, Snowtrace / Routescan explorer)
-- [ ] Add Mantle (chainId 5000, Mantlescan explorer)
-- [ ] Add Mode (chainId 34443, Modescan / Blockscout explorer)
-- [ ] Add Blast (chainId 81457, Blastscan explorer)
+- [x] Add Gnosis Chain to `src/config/chains.ts` (chainId 100, Gnosisscan explorer)
+- [x] Add BNB Chain (BSC) (chainId 56, Bscscan explorer)
+- [x] Add Avalanche C-Chain (chainId 43114, Snowscan/Routescan explorer)
+- [x] Add Mantle (chainId 5000, Mantlescan explorer)
+- [x] Add Mode (chainId 34443, Modescan / Blockscout explorer)
+- [x] Add Blast (chainId 81457, Blastscan explorer)
 - [ ] Obtain and add API keys for each new chain's explorer to `.env`
+      (USER ACTION: GNOSISSCAN_API_KEY, BSCSCAN_API_KEY, SNOWSCAN_API_KEY, MANTLESCAN_API_KEY, BLASTSCAN_API_KEY — Mode uses Blockscout, no key needed)
 - [ ] Confirm LI.FI supports each new chain (check LI.FI `/chains` endpoint)
-- [ ] Add new chains to demo mode MockScanner so demo flow still works
-- [ ] Update README chain list
+      (USER ACTION or next session: verify lifiChainKeys dai/bsc/ava/mnt/mod/bls against live LI.FI /chains API)
+- [x] Add new chains to demo mode MockScanner so demo flow still works
+      (mock.ts: full token sets for all 6 new chains with sweepable/uneconomic/no-route mix)
+- [x] Update README chain list
 
 ### Task 24: Etherscan Scanner Pagination Beyond 100
 - [x] Audit `EtherscanScanner.fetchTokenBalances()` — confirm it currently calls
