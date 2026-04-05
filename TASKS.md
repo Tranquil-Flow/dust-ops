@@ -266,17 +266,18 @@ They are code-level issues that can be resolved without external API keys or a b
       each other (14 tests in src/__tests__/utils/sweepExecution.test.ts)
 
 ### Task 26: Price Oracle Pre-Filter Before LI.FI Quoting
-- [ ] Before calling LI.FI for a quote, estimate token USD value using a cheap price oracle:
-      - Option A: CoinGecko `/simple/token_price/{chain}?contract_addresses={addr}` (free tier)
-      - Option B: DefiLlama `/prices/current/{chain}:{addr}` (free, no key needed)
-      - Option C: Use the existing price data already returned by the scanner (if any)
-- [ ] If estimated value < `MIN_QUOTE_THRESHOLD_USD` (default: $1.00), skip LI.FI quote
-      entirely and classify as `uneconomic` immediately
-- [ ] This avoids wasting LI.FI quota on dust that will never be sweepable
-- [ ] Add `MIN_QUOTE_THRESHOLD_USD` to config (env var override)
-- [ ] Add `PRICE_ORACLE` config option: `coingecko` | `defillama` | `none`
-- [ ] Unit test: tokens below threshold are never quoted; tokens above threshold proceed
-      to LI.FI
+- [x] Before calling LI.FI for a quote, estimate token USD value using a cheap price oracle:
+      - Used DefiLlama `/prices/current/{chain}:{addr}` (free, no key needed)
+      - Also accepts pre-computed `fromValueUsd` hint from scan results (Option C), avoiding
+        a redundant oracle call when the value is already known
+- [x] If estimated value < `MIN_QUOTE_THRESHOLD_USD` (default: $1.00), skip LI.FI quote
+      entirely — returns 422 { filtered: true, reason, valueUsd, threshold }
+- [x] This avoids wasting LI.FI quota on dust that will never be sweepable
+- [x] Add `MIN_QUOTE_THRESHOLD_USD` to config (env var override)
+- [x] Add `PRICE_ORACLE` config option: `defillama` | `none`
+      (src/utils/priceOracle.ts; PRICE_ORACLE=none bypasses the filter entirely)
+- [x] Unit test: tokens below threshold are never quoted; tokens above threshold proceed
+      to LI.FI (18 oracle tests + 6 quote route pre-filter tests; 250 total)
 
 ### Task 27: Sequential Transaction Fallback (Non-EIP-5792 Wallets)
 - [ ] Currently: if wallet doesn't support `wallet_sendCalls`, show a gating screen
