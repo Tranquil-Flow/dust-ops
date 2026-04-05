@@ -22,6 +22,24 @@ interface EtherscanBalanceResponse extends EtherscanBaseResponse {
   result: string;
 }
 
+/**
+ * Maximum number of pages to fetch from the Etherscan tokentx endpoint.
+ * Each page returns up to 100 transactions.
+ * Default: 20 pages = up to 2000 token transfer records.
+ * Override via ETHERSCAN_MAX_PAGES env var.
+ */
+const ETHERSCAN_MAX_PAGES: number = (() => {
+  const envVal = process.env.ETHERSCAN_MAX_PAGES;
+  if (envVal) {
+    const parsed = parseInt(envVal, 10);
+    if (!isNaN(parsed) && parsed > 0) return parsed;
+  }
+  return 20;
+})();
+
+/** Number of transactions returned per Etherscan API page (their max is 10 000, but 100 is safe default) */
+const PAGE_SIZE = 100;
+
 export class EtherscanScanner implements ChainScanner {
   chainId: number;
   private baseUrl: string;
@@ -82,57 +100,74 @@ export class EtherscanScanner implements ChainScanner {
   }
 
   /**
-   * Fetches token transfer history to discover which tokens the address has interacted with.
-   * We deduplicate by contract address to get the unique token set.
+   * Fetches token transfer history across multiple pages to discover all tokens
+   * the address has ever interacted with, then deduplicates by contract address.
+   *
+   * Pagination: requests pages 1..N (up to ETHERSCAN_MAX_PAGES) with PAGE_SIZE=100.
+   * Stops early when a page returns fewer than PAGE_SIZE results (last page signal).
+   *
+   * This correctly discovers tokens even for whale addresses with 1000+ transfers.
    */
   private async fetchUniqueTokens(
     address: string
   ): Promise<EtherscanTokenTx[]> {
-    const url = this.buildUrl({
-      module: 'account',
-      action: 'tokentx',
-      address,
-      sort: 'desc',
-      page: '1',
-      offset: '100',
-    });
-
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(
-        `Etherscan API error (chain ${this.chainId}): ${response.status} ${response.statusText}`
-      );
-    }
-
-    const data: EtherscanTokenTxResponse = await response.json();
-
-    // Status '0' with message 'No transactions found' is a valid empty response
-    if (data.status === '0') {
-      if (
-        typeof data.result === 'string' &&
-        (data.result.toLowerCase().includes('no transactions') ||
-          data.result.toLowerCase().includes('no records'))
-      ) {
-        return [];
-      }
-      // Other error
-      throw new Error(
-        `Etherscan API error (chain ${this.chainId}): ${data.message} - ${data.result}`
-      );
-    }
-
-    if (!Array.isArray(data.result)) {
-      return [];
-    }
-
-    // Deduplicate by contract address (case-insensitive)
     const seen = new Set<string>();
     const unique: EtherscanTokenTx[] = [];
-    for (const tx of data.result) {
-      const key = tx.contractAddress.toLowerCase();
-      if (!seen.has(key)) {
-        seen.add(key);
-        unique.push(tx);
+
+    for (let page = 1; page <= ETHERSCAN_MAX_PAGES; page++) {
+      const url = this.buildUrl({
+        module: 'account',
+        action: 'tokentx',
+        address,
+        sort: 'desc',
+        page: String(page),
+        offset: String(PAGE_SIZE),
+      });
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(
+          `Etherscan API error (chain ${this.chainId}): ${response.status} ${response.statusText}`
+        );
+      }
+
+      const data: EtherscanTokenTxResponse = await response.json();
+
+      // Status '0' with a "no transactions" message is valid empty response
+      if (data.status === '0') {
+        if (
+          typeof data.result === 'string' &&
+          (data.result.toLowerCase().includes('no transactions') ||
+            data.result.toLowerCase().includes('no records'))
+        ) {
+          // Empty — stop pagination
+          break;
+        }
+        // Other API-level error
+        throw new Error(
+          `Etherscan API error (chain ${this.chainId}): ${data.message} - ${data.result}`
+        );
+      }
+
+      if (!Array.isArray(data.result)) {
+        // Unexpected shape — stop pagination defensively
+        break;
+      }
+
+      const pageTxs = data.result;
+
+      // Deduplicate by contract address (case-insensitive) across all pages
+      for (const tx of pageTxs) {
+        const key = tx.contractAddress.toLowerCase();
+        if (!seen.has(key)) {
+          seen.add(key);
+          unique.push(tx);
+        }
+      }
+
+      // If fewer results than PAGE_SIZE, this was the last page — stop early
+      if (pageTxs.length < PAGE_SIZE) {
+        break;
       }
     }
 
