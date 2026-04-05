@@ -191,17 +191,18 @@ They are code-level issues that can be resolved without external API keys or a b
 - [ ] Unit test: given mocked gas price + token value, verify all 3 classifications work
 
 ### Task 21: Replace In-Memory Cache with Persistent Store
-- [ ] Identify all in-memory caches in the codebase (search for `Map`, `{}` objects
+- [x] Identify all in-memory caches in the codebase (search for `Map`, `{}` objects
       used as caches, module-level variables holding quote/scan results)
-- [ ] Replace the quote cache in `/api/quote` with a persistent store:
-      - Option A (simpler): use `node-cache` or `lru-cache` npm package with TTL —
-        at least survives across requests within the same server process
-      - Option B (recommended): SQLite via `better-sqlite3` — store
-        `(token_address, chain_id, quote_json, expires_at)`, query before calling LI.FI
-- [ ] Replace the scan result cache (if any) in `/api/scan` similarly
-- [ ] Cache TTLs: quotes 30s, scan results 5 minutes
+- [x] Replace the quote cache in `/api/quote` with a persistent store:
+      Used RouteCache (src/utils/cache.ts) — Redis (ioredis) when REDIS_CONNSTR is set,
+      InMemoryBackend fallback otherwise. Survives across requests in same process.
+- [x] Replace the scan result cache (if any) in `/api/scan` similarly
+      (scan had no cache — added scanCache with 5-min TTL)
+- [x] Cache TTLs: quotes 30s, scan results 5 minutes
 - [ ] Add cache invalidation on sweep completion (so next scan reflects swept tokens)
-- [ ] Unit test: verify cache hit returns cached value; verify TTL expiry triggers refresh
+      NOTE: deferred — sweep is a client-side hook; cache.delete() API is available for future wiring
+- [x] Unit test: verify cache hit returns cached value; verify TTL expiry triggers refresh
+      (16 tests in src/__tests__/utils/cache.test.ts)
 
 ### Task 22: Fix isNative Check Mismatch
 - [x] Find all `isNative` checks across the codebase (search `isNative`, `token.native`,
