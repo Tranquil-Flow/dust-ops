@@ -32,7 +32,19 @@ export interface ChainConfig {
   gasTier: GasTier;
   nativeCurrency: { name: string; symbol: string; decimals: number };
   blockExplorerUrl: string;
+  /**
+   * Public JSON-RPC endpoint for gas price estimation (no API key required).
+   * Used by viability classification at scan time.
+   */
+  publicRpcUrl: string;
 }
+
+/**
+ * Viability gas buffer multiplier default (1.2×).
+ * Token must be worth at least 1.2× gas cost to be classified as sweepable.
+ * Override via VIABILITY_GAS_BUFFER env var.
+ */
+export const VIABILITY_GAS_BUFFER_DEFAULT = 1.2;
 
 export type TokenViability = 'sweepable' | 'uneconomic' | 'no-route';
 

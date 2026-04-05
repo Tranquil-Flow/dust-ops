@@ -13,6 +13,7 @@ export const CHAINS: ChainConfig[] = [
     gasTier: 'high',
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     blockExplorerUrl: 'https://etherscan.io',
+    publicRpcUrl: 'https://eth.llamarpc.com',
   },
   {
     id: 8453,
@@ -25,6 +26,7 @@ export const CHAINS: ChainConfig[] = [
     gasTier: 'ultra-low',
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     blockExplorerUrl: 'https://basescan.org',
+    publicRpcUrl: 'https://mainnet.base.org',
   },
   {
     id: 10,
@@ -37,6 +39,7 @@ export const CHAINS: ChainConfig[] = [
     gasTier: 'low',
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     blockExplorerUrl: 'https://optimistic.etherscan.io',
+    publicRpcUrl: 'https://mainnet.optimism.io',
   },
   {
     id: 42161,
@@ -50,6 +53,7 @@ export const CHAINS: ChainConfig[] = [
     gasTier: 'low',
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     blockExplorerUrl: 'https://arbiscan.io',
+    publicRpcUrl: 'https://arb1.arbitrum.io/rpc',
   },
   {
     id: 137,
@@ -63,6 +67,7 @@ export const CHAINS: ChainConfig[] = [
     gasTier: 'ultra-low',
     nativeCurrency: { name: 'POL', symbol: 'POL', decimals: 18 },
     blockExplorerUrl: 'https://polygonscan.com',
+    publicRpcUrl: 'https://polygon-rpc.com',
   },
   {
     id: 534352,
@@ -76,6 +81,7 @@ export const CHAINS: ChainConfig[] = [
     gasTier: 'low',
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     blockExplorerUrl: 'https://scrollscan.com',
+    publicRpcUrl: 'https://rpc.scroll.io',
   },
   {
     id: 59144,
@@ -89,6 +95,7 @@ export const CHAINS: ChainConfig[] = [
     gasTier: 'low',
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     blockExplorerUrl: 'https://lineascan.build',
+    publicRpcUrl: 'https://rpc.linea.build',
   },
   {
     id: 324,
@@ -102,6 +109,7 @@ export const CHAINS: ChainConfig[] = [
     gasTier: 'low',
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     blockExplorerUrl: 'https://era.zksync.network',
+    publicRpcUrl: 'https://mainnet.era.zksync.io',
   },
   {
     id: 1301,
@@ -114,6 +122,7 @@ export const CHAINS: ChainConfig[] = [
     gasTier: 'ultra-low',
     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
     blockExplorerUrl: 'https://uniscan.xyz',
+    publicRpcUrl: 'https://mainnet.unichain.org',
   },
 ];
 
