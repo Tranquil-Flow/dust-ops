@@ -181,12 +181,12 @@ describe('POST /api/scan', () => {
       expect(Array.isArray(body.results)).toBe(true);
     });
 
-    it('returns results for all 9 chains', async () => {
+    it('returns results for all 15 chains', async () => {
       const req = makeRequest({ address: VALID_ADDRESS });
       const res = await POST(req);
       const body = await res.json();
-      // 9 chains in CHAINS config
-      expect(body.results).toHaveLength(9);
+      // 15 chains in CHAINS config (9 original + 6 Phase 4 expansion)
+      expect(body.results).toHaveLength(15);
     });
 
     it('each result has chainId and tokens fields', async () => {

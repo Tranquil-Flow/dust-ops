@@ -2,12 +2,17 @@ import { describe, it, expect } from 'vitest';
 import { CHAINS, CHAIN_MAP, SUPPORTED_CHAIN_IDS } from '../../config/chains';
 
 describe('Chain Registry', () => {
-  it('contains exactly 9 chains', () => {
-    expect(CHAINS).toHaveLength(9);
+  it('contains exactly 15 chains', () => {
+    expect(CHAINS).toHaveLength(15);
   });
 
   it('includes all expected chain IDs', () => {
-    const expectedIds = [1, 8453, 10, 42161, 137, 534352, 59144, 324, 1301];
+    const expectedIds = [
+      // Phase 1 (original 9)
+      1, 8453, 10, 42161, 137, 534352, 59144, 324, 1301,
+      // Phase 4 expansion (6 new)
+      100, 56, 43114, 5000, 34443, 81457,
+    ];
     const actualIds = CHAINS.map((c) => c.id);
     for (const id of expectedIds) {
       expect(actualIds).toContain(id);
@@ -16,6 +21,7 @@ describe('Chain Registry', () => {
 
   it('includes all expected chain names', () => {
     const names = CHAINS.map((c) => c.name);
+    // Original 9
     expect(names).toContain('Ethereum');
     expect(names).toContain('Base');
     expect(names).toContain('Optimism');
@@ -25,6 +31,13 @@ describe('Chain Registry', () => {
     expect(names).toContain('Linea');
     expect(names).toContain('zkSync Era');
     expect(names).toContain('Unichain');
+    // Phase 4 expansion
+    expect(names).toContain('Gnosis');
+    expect(names).toContain('BNB Chain');
+    expect(names).toContain('Avalanche C-Chain');
+    expect(names).toContain('Mantle');
+    expect(names).toContain('Mode');
+    expect(names).toContain('Blast');
   });
 
   describe('each chain has a valid config shape', () => {

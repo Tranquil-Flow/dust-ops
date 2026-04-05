@@ -257,6 +257,180 @@ const CHAIN_TOKENS: Record<number, TokenBalance[]> = {
       logoUrl: 'https://assets.coingecko.com/coins/images/9956/small/4943.png',
     },
   ],
+
+  // Gnosis Chain (chainId 100)
+  100: [
+    {
+      address: '0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83',
+      symbol: 'USDC',
+      name: 'USD Coin on Gnosis',
+      decimals: 6,
+      balance: '22500000', // 22.50 USDC — sweepable
+      logoUrl: 'https://assets.coingecko.com/coins/images/6319/small/usdc.png',
+    },
+    {
+      address: '0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d',
+      symbol: 'WXDAI',
+      name: 'Wrapped XDAI',
+      decimals: 18,
+      balance: '45000000000000000000', // 45.0 WXDAI — sweepable
+      logoUrl: 'https://assets.coingecko.com/coins/images/11062/small/Identity-Primary-DarkBG.png',
+    },
+    {
+      address: '0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb',
+      symbol: 'GNO',
+      name: 'Gnosis Token',
+      decimals: 18,
+      balance: '80000000000000000', // 0.08 GNO — sweepable
+      logoUrl: 'https://assets.coingecko.com/coins/images/662/small/logo_square_simple_300px.png',
+    },
+    {
+      address: '0xfaketoken0000000000000000000000000000002',
+      symbol: 'OBSCURE',
+      name: 'Obscure Gnosis Token',
+      decimals: 18,
+      balance: '1000000000000000000', // 1.0 — no route
+    },
+  ],
+
+  // BNB Chain (chainId 56)
+  56: [
+    {
+      address: '0x55d398326f99059fF775485246999027B3197955',
+      symbol: 'USDT',
+      name: 'Tether USD (BSC)',
+      decimals: 18,
+      balance: '35000000000000000000', // 35.0 USDT — sweepable
+      logoUrl: 'https://assets.coingecko.com/coins/images/325/small/Tether-logo.png',
+    },
+    {
+      address: '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d',
+      symbol: 'USDC',
+      name: 'USD Coin (BSC)',
+      decimals: 18,
+      balance: '12000000000000000000', // 12.0 USDC — sweepable
+      logoUrl: 'https://assets.coingecko.com/coins/images/6319/small/usdc.png',
+    },
+    {
+      address: '0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82',
+      symbol: 'CAKE',
+      name: 'PancakeSwap Token',
+      decimals: 18,
+      balance: '5500000000000000000', // 5.5 CAKE — sweepable
+      logoUrl: 'https://assets.coingecko.com/coins/images/12632/small/pancakeswap-cake-logo_%281%29.png',
+    },
+    {
+      address: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
+      symbol: 'WBNB',
+      name: 'Wrapped BNB',
+      decimals: 18,
+      balance: '2000000000000000', // 0.002 WBNB — uneconomic
+      logoUrl: 'https://assets.coingecko.com/coins/images/825/small/bnb-icon2_2x.png',
+    },
+  ],
+
+  // Avalanche C-Chain (chainId 43114)
+  43114: [
+    {
+      address: '0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E',
+      symbol: 'USDC',
+      name: 'USD Coin (Avalanche)',
+      decimals: 6,
+      balance: '58000000', // 58.0 USDC — sweepable
+      logoUrl: 'https://assets.coingecko.com/coins/images/6319/small/usdc.png',
+    },
+    {
+      address: '0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7',
+      symbol: 'WAVAX',
+      name: 'Wrapped AVAX',
+      decimals: 18,
+      balance: '2300000000000000000', // 2.3 WAVAX — sweepable
+      logoUrl: 'https://assets.coingecko.com/coins/images/12559/small/Avalanche_Circle_RedWhite_Trans.png',
+    },
+    {
+      address: '0xc7198437980c041c805A1EDcbA50c1Ce5db95118',
+      symbol: 'USDT.e',
+      name: 'Tether USD (Avalanche bridge)',
+      decimals: 6,
+      balance: '1200', // 0.0012 USDT.e — dust
+      logoUrl: 'https://assets.coingecko.com/coins/images/325/small/Tether-logo.png',
+    },
+  ],
+
+  // Mantle (chainId 5000)
+  5000: [
+    {
+      address: '0x09Bc4E0D864854c6aFB6eB9A9cdF58aC190D0dF9',
+      symbol: 'USDC',
+      name: 'USD Coin (Mantle)',
+      decimals: 6,
+      balance: '41000000', // 41.0 USDC — sweepable
+      logoUrl: 'https://assets.coingecko.com/coins/images/6319/small/usdc.png',
+    },
+    {
+      address: '0x201EBa5CC46D216Ce6DC03F6a759e8E766e956aE',
+      symbol: 'USDT',
+      name: 'Tether USD (Mantle)',
+      decimals: 6,
+      balance: '800', // 0.0008 USDT — dust
+      logoUrl: 'https://assets.coingecko.com/coins/images/325/small/Tether-logo.png',
+    },
+    {
+      address: '0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8',
+      symbol: 'WMNT',
+      name: 'Wrapped Mantle',
+      decimals: 18,
+      balance: '75000000000000000000', // 75.0 WMNT — sweepable
+      logoUrl: 'https://assets.coingecko.com/coins/images/30980/small/token-logo.png',
+    },
+  ],
+
+  // Mode (chainId 34443)
+  34443: [
+    {
+      address: '0xd988097fb8612cc24eeC14542bC03424c656005f',
+      symbol: 'USDC',
+      name: 'USD Coin (Mode)',
+      decimals: 6,
+      balance: '17000000', // 17.0 USDC — sweepable
+      logoUrl: 'https://assets.coingecko.com/coins/images/6319/small/usdc.png',
+    },
+    {
+      address: '0x4200000000000000000000000000000000000006',
+      symbol: 'WETH',
+      name: 'Wrapped Ether (Mode)',
+      decimals: 18,
+      balance: '4200000000000000', // 0.0042 WETH — sweepable
+      logoUrl: 'https://assets.coingecko.com/coins/images/2518/small/weth.png',
+    },
+  ],
+
+  // Blast (chainId 81457)
+  81457: [
+    {
+      address: '0x4300000000000000000000000000000000000003',
+      symbol: 'USDB',
+      name: 'USDB (Blast native stablecoin)',
+      decimals: 18,
+      balance: '33000000000000000000', // 33.0 USDB — sweepable
+      logoUrl: 'https://assets.coingecko.com/coins/images/35273/small/usdb.png',
+    },
+    {
+      address: '0x4300000000000000000000000000000000000004',
+      symbol: 'WETH',
+      name: 'Wrapped Ether (Blast)',
+      decimals: 18,
+      balance: '6500000000000000', // 0.0065 WETH — sweepable
+      logoUrl: 'https://assets.coingecko.com/coins/images/2518/small/weth.png',
+    },
+    {
+      address: '0xfaketoken0000000000000000000000000000003',
+      symbol: 'BLASTDUST',
+      name: 'Obscure Blast Token',
+      decimals: 18,
+      balance: '200000000000000', // 0.0002 — uneconomic dust
+    },
+  ],
 };
 
 /** Fallback tokens for chains not explicitly listed */
