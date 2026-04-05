@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSwapProvider } from '@/utils/providers';
 import type { BridgeParams, SwapParams } from '@/utils/providers';
 import { quoteCache } from '@/utils/cache';
+import { shouldFilterToken, MIN_QUOTE_THRESHOLD_USD, PRICE_ORACLE } from '@/utils/priceOracle';
 // In demo mode, getSwapProvider() automatically returns MockSwapProvider — no extra wiring needed.
 
 interface QuoteRequestBody {
@@ -13,10 +14,24 @@ interface QuoteRequestBody {
   fromAddress: string;
   toAddress?: string;
   type: 'swap' | 'bridge';
+  /**
+   * Optional: token decimals (e.g. 6 for USDC, 18 for WETH).
+   * When provided together with fromAmount, the oracle pre-filter can estimate
+   * USD value without an additional caller-side price lookup.
+   */
+  fromDecimals?: number;
+  /**
+   * Optional: pre-computed USD value of the fromAmount from the scan step.
+   * If provided, this is used directly for the pre-filter check — no oracle call needed.
+   * Pass `null` explicitly to indicate "unknown value" (token passes through).
+   */
+  fromValueUsd?: number | null;
 }
 
 function getCacheKey(body: QuoteRequestBody): string {
-  return `quote:${JSON.stringify(body)}`;
+  // Exclude fromDecimals/fromValueUsd from cache key — they don't affect the LI.FI response
+  const { fromDecimals: _d, fromValueUsd: _v, ...cacheBody } = body;
+  return `quote:${JSON.stringify(cacheBody)}`;
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -37,6 +52,31 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   if (type !== 'swap' && type !== 'bridge') {
     return NextResponse.json({ error: 'type must be "swap" or "bridge"' }, { status: 400 });
+  }
+
+  // ─── Price oracle pre-filter ─────────────────────────────────────────────
+  // Skip LI.FI call entirely for tokens whose value is below the threshold.
+  // This preserves LI.FI quota and avoids unnecessary latency.
+  if (PRICE_ORACLE !== 'none') {
+    const preFilter = await shouldFilterToken({
+      valueUsd: body.fromValueUsd,
+      chainId: fromChainId,
+      address: fromToken,
+      rawAmount: fromAmount,
+      decimals: body.fromDecimals,
+    });
+
+    if (preFilter.filtered) {
+      return NextResponse.json(
+        {
+          filtered: true,
+          reason: preFilter.reason,
+          valueUsd: preFilter.valueUsd,
+          threshold: MIN_QUOTE_THRESHOLD_USD,
+        },
+        { status: 422 }
+      );
+    }
   }
 
   const cacheKey = getCacheKey(body);

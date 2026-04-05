@@ -67,6 +67,10 @@ export function useSweep() {
               fromAddress: address,
               toAddress: destination.address || address,
               type: quoteType,
+              // Pass pre-computed USD value from scan results so the quote route
+              // can apply the oracle pre-filter without an extra price fetch.
+              fromDecimals: token.decimals,
+              fromValueUsd: token.valueUsd,
             }),
           })
 

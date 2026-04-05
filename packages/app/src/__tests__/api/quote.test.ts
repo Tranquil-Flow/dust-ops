@@ -31,6 +31,17 @@ vi.mock('../../config/demo', () => ({
   DEMO_WALLET_ADDRESS: '0x1234567890abcdef1234567890abcdef12345678',
 }));
 
+// ---------------------------------------------------------------------------
+// Mock the price oracle module to control pre-filter behavior in tests
+// ---------------------------------------------------------------------------
+const mockShouldFilterToken = vi.fn();
+
+vi.mock('../../utils/priceOracle', () => ({
+  shouldFilterToken: (...args: unknown[]) => mockShouldFilterToken(...args),
+  MIN_QUOTE_THRESHOLD_USD: 1.0,
+  PRICE_ORACLE: 'defillama',
+}));
+
 // Dynamic import AFTER mocks are set up
 const { POST } = await import('../../app/api/quote/route');
 
@@ -119,9 +130,12 @@ beforeEach(() => {
   mockGetSwapQuote.mockReset();
   mockGetBridgeQuote.mockReset();
   mockGetStatus.mockReset();
+  mockShouldFilterToken.mockReset();
 
   mockGetSwapQuote.mockResolvedValue(mockSwapQuote);
   mockGetBridgeQuote.mockResolvedValue(mockBridgeQuote);
+  // Default: oracle pre-filter passes through (not filtered)
+  mockShouldFilterToken.mockResolvedValue({ filtered: false, valueUsd: 42.0, threshold: 1.0 });
 });
 
 afterEach(() => {
@@ -424,6 +438,95 @@ describe('POST /api/quote', () => {
       expect(res.status).toBe(502);
       const body = await res.json();
       expect(body.error).toContain('Rate limit exceeded');
+    });
+  });
+
+  describe('price oracle pre-filter', () => {
+    it('returns 422 with filtered=true when oracle says token is below threshold', async () => {
+      mockShouldFilterToken.mockResolvedValueOnce({
+        filtered: true,
+        valueUsd: 0.45,
+        threshold: 1.0,
+        reason: 'Token value $0.4500 is below minimum quote threshold $1.00',
+      });
+
+      const req = makeRequest({ ...VALID_SWAP_BODY, fromAmount: 'filter_test_1', fromValueUsd: 0.45, fromDecimals: 6 });
+      const res = await POST(req);
+      expect(res.status).toBe(422);
+      const body = await res.json();
+      expect(body.filtered).toBe(true);
+      expect(body.threshold).toBe(1.0);
+      expect(body.valueUsd).toBe(0.45);
+      expect(body.reason).toMatch(/below minimum/i);
+    });
+
+    it('does not call LI.FI provider when oracle filters token', async () => {
+      mockShouldFilterToken.mockResolvedValueOnce({
+        filtered: true,
+        valueUsd: 0.05,
+        threshold: 1.0,
+        reason: 'Token value $0.0500 is below minimum quote threshold $1.00',
+      });
+
+      const req = makeRequest({ ...VALID_SWAP_BODY, fromAmount: 'filter_no_lifi_test' });
+      await POST(req);
+      expect(mockGetSwapQuote).not.toHaveBeenCalled();
+      expect(mockGetBridgeQuote).not.toHaveBeenCalled();
+    });
+
+    it('proceeds to LI.FI when oracle passes through token', async () => {
+      // mockShouldFilterToken already returns filtered: false in beforeEach
+      const req = makeRequest({ ...VALID_SWAP_BODY, fromAmount: 'filter_pass_test', fromValueUsd: 15.0 });
+      const res = await POST(req);
+      expect(res.status).toBe(200);
+      expect(mockGetSwapQuote).toHaveBeenCalledTimes(1);
+    });
+
+    it('proceeds to LI.FI when oracle returns null valueUsd (unknown price → optimistic)', async () => {
+      mockShouldFilterToken.mockResolvedValueOnce({
+        filtered: false,
+        valueUsd: null,
+        threshold: 1.0,
+      });
+
+      const req = makeRequest({ ...VALID_SWAP_BODY, fromAmount: 'filter_null_test', fromValueUsd: null });
+      const res = await POST(req);
+      expect(res.status).toBe(200);
+      expect(mockGetSwapQuote).toHaveBeenCalledTimes(1);
+    });
+
+    it('passes fromValueUsd and fromDecimals to shouldFilterToken', async () => {
+      const req = makeRequest({
+        ...VALID_SWAP_BODY,
+        fromAmount: 'filter_params_test',
+        fromValueUsd: 3.50,
+        fromDecimals: 6,
+      });
+      await POST(req);
+
+      expect(mockShouldFilterToken).toHaveBeenCalledWith(
+        expect.objectContaining({
+          valueUsd: 3.50,
+        })
+      );
+    });
+
+    it('does not include fromDecimals/fromValueUsd in cache key (cache key is stable)', async () => {
+      // Two requests with same core params but different fromValueUsd should share cache
+      const baseBody = { ...VALID_SWAP_BODY, fromAmount: 'cache_key_stable_test' };
+
+      // First request
+      const req1 = makeRequest({ ...baseBody, fromValueUsd: 10.0, fromDecimals: 6 });
+      const res1 = await POST(req1);
+      expect(res1.status).toBe(200);
+      expect(mockGetSwapQuote).toHaveBeenCalledTimes(1);
+
+      // Second request with different fromValueUsd — should still hit cache
+      const req2 = makeRequest({ ...baseBody, fromValueUsd: 20.0, fromDecimals: 18 });
+      const res2 = await POST(req2);
+      expect(res2.status).toBe(200);
+      // Provider should NOT be called again — cached
+      expect(mockGetSwapQuote).toHaveBeenCalledTimes(1);
     });
   });
 });
