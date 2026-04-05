@@ -201,8 +201,8 @@ They are code-level issues that can be resolved without external API keys or a b
 - [x] Replace the scan result cache (if any) in `/api/scan` similarly
       (scan had no cache — added scanCache with 5-min TTL)
 - [x] Cache TTLs: quotes 30s, scan results 5 minutes
-- [ ] Add cache invalidation on sweep completion (so next scan reflects swept tokens)
-      NOTE: deferred — sweep is a client-side hook; cache.delete() API is available for future wiring
+- [x] Add cache invalidation on sweep completion (so next scan reflects swept tokens)
+      DELETE /api/scan?address=0x... endpoint added; useSweep fires it fire-and-forget on completion
 - [x] Unit test: verify cache hit returns cached value; verify TTL expiry triggers refresh
       (16 tests in src/__tests__/utils/cache.test.ts)
 
