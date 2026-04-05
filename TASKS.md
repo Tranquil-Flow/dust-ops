@@ -249,20 +249,21 @@ They are code-level issues that can be resolved without external API keys or a b
       tokens deduplicated correctly (6 new pagination tests in etherscan.test.ts)
 
 ### Task 25: Parallel Chain Sweeping
-- [ ] Audit `useSweep.ts` — confirm chain sweeps are currently sequential
+- [x] Audit `useSweep.ts` — confirm chain sweeps are currently sequential
       (chain 1 fully complete before chain 2 starts)
-- [ ] Refactor sweep execution to run per-chain `wallet_sendCalls` batches in parallel:
+- [x] Refactor sweep execution to run per-chain `wallet_sendCalls` batches in parallel:
       - Group approved plans by `sourceChain`
-      - Fire all `wallet_sendCalls` for each chain simultaneously (Promise.all)
-      - Track per-chain status independently
+      - Fire all `wallet_sendCalls` for each chain simultaneously (Promise.allSettled)
+      - Track per-chain status independently via updateChainState callback
       - Bridge calls (cross-chain) still need same-chain swaps to complete first
-- [ ] Update `sweepStateAtom` to hold a `Map<chainId, ChainSweepStatus>` instead of
-      a single global status
+- [x] Keep `sweepStateAtom.chains: ChainSweepState[]` for per-chain state; the array
+      already provides per-chain tracking. Global phase = overall status.
 - [ ] Update sweep progress UI to show per-chain status columns/rows simultaneously
-- [ ] Add timeout per chain: if a chain doesn't confirm within 5 minutes, mark as
-      failed and continue with other chains
-- [ ] Unit test: mock multi-chain sweep, verify all chains start without waiting for
-      each other
+      <!-- BLOCKED: requires browser — UI work deferred -->
+- [x] Add timeout per chain: if a chain doesn't confirm within 5 minutes, mark as
+      failed and continue with other chains (CHAIN_TIMEOUT_MS = 5 * 60 * 1000)
+- [x] Unit test: mock multi-chain sweep, verify all chains start without waiting for
+      each other (14 tests in src/__tests__/utils/sweepExecution.test.ts)
 
 ### Task 26: Price Oracle Pre-Filter Before LI.FI Quoting
 - [ ] Before calling LI.FI for a quote, estimate token USD value using a cheap price oracle:
