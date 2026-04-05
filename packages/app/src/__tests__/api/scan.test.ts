@@ -44,7 +44,7 @@ vi.mock('../../utils/cache', () => ({
 }));
 
 // We import AFTER mocking so the route sees the mocked dependencies
-const { POST } = await import('../../app/api/scan/route');
+const { POST, DELETE } = await import('../../app/api/scan/route');
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -269,6 +269,59 @@ describe('POST /api/scan', () => {
       const body = await res.json();
       const failedChain = body.results.find((r: { error?: string }) => r.error);
       expect(failedChain?.error).toBe('Unknown error');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // DELETE /api/scan — cache invalidation
+  // ---------------------------------------------------------------------------
+  describe('DELETE /api/scan', () => {
+    function makeDeleteRequest(address?: string): NextRequest {
+      const url = address
+        ? `http://localhost:3000/api/scan?address=${encodeURIComponent(address)}`
+        : 'http://localhost:3000/api/scan';
+      return new NextRequest(url, { method: 'DELETE' });
+    }
+
+    it('returns 200 and invalidated=true for a valid address', async () => {
+      const req = makeDeleteRequest(VALID_ADDRESS);
+      const res = await DELETE(req);
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.invalidated).toBe(true);
+      expect(body.address).toBe(VALID_ADDRESS.toLowerCase());
+    });
+
+    it('calls scanCache.delete with the correct key', async () => {
+      const { scanCache } = await import('../../utils/cache');
+      const req = makeDeleteRequest(VALID_ADDRESS);
+      await DELETE(req);
+      expect(scanCache.delete).toHaveBeenCalledWith(
+        `scan:${VALID_ADDRESS.toLowerCase()}`
+      );
+    });
+
+    it('returns 400 when address is missing', async () => {
+      const req = makeDeleteRequest();
+      const res = await DELETE(req);
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body.error).toMatch(/address/i);
+    });
+
+    it('returns 400 when address is invalid', async () => {
+      const req = makeDeleteRequest('not-an-address');
+      const res = await DELETE(req);
+      expect(res.status).toBe(400);
+    });
+
+    it('normalises address to lowercase', async () => {
+      const mixedCase = '0xD8DA6BF26964AF9D7EED9E03E53415D37AA96045';
+      const req = makeDeleteRequest(mixedCase);
+      const res = await DELETE(req);
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.address).toBe(mixedCase.toLowerCase());
     });
   });
 });

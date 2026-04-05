@@ -204,6 +204,16 @@ export function useSweep() {
     setSweepState((prev: SweepState | null) =>
       prev ? { ...prev, phase: anyFailed ? 'error' : 'complete' } : null
     )
+
+    // Invalidate the scan cache so the next scan reflects swept tokens.
+    // Fire-and-forget — a cache invalidation failure should never block the sweep result.
+    if (address) {
+      fetch(`/api/scan?address=${encodeURIComponent(address)}`, { method: 'DELETE' }).catch(
+        () => {
+          // Non-fatal: cache will expire naturally after 5 minutes
+        }
+      )
+    }
   }
 
   // -------------------------------------------------------------------------

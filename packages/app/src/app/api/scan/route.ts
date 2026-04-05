@@ -204,3 +204,28 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   return NextResponse.json({ results, demo: isDemoMode() });
 }
+
+/**
+ * DELETE /api/scan?address=0x...
+ *
+ * Invalidates the cached scan result for the given wallet address.
+ * Called by the sweep hook after a sweep completes so the next scan
+ * reflects the updated token balances (swept tokens removed).
+ *
+ * Returns 200 on success, 400 on invalid input, 204 if nothing was cached.
+ */
+export async function DELETE(request: NextRequest): Promise<NextResponse> {
+  const address = request.nextUrl.searchParams.get('address')?.trim() ?? '';
+
+  if (!isValidAddress(address)) {
+    return NextResponse.json(
+      { error: 'Missing or invalid "address" query parameter.' },
+      { status: 400 }
+    );
+  }
+
+  const cacheKey = `scan:${address.toLowerCase()}`;
+  await scanCache.delete(cacheKey);
+
+  return NextResponse.json({ invalidated: true, address: address.toLowerCase() });
+}
