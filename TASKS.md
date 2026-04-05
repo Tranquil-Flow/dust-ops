@@ -154,3 +154,136 @@
 **Recommended autonomous work order:**
 Tasks 1 → 2 → 3 → 4 → 5 → 6 → 14 → 15 → 16 → 18 → 12
 Then user provides API keys for Tasks 7-11, 13, 17.
+
+---
+
+## Phase 3 — Critical Bug Fixes
+
+These bugs exist in the current codebase and must be fixed before live wallet testing.
+They are code-level issues that can be resolved without external API keys or a browser.
+
+### Task 19: Fix Native Token Address Constants
+- [x] Audit all files for native token address representations — search for `0x000...000`,
+      `AddressZero`, `zeroAddress`, and any bare `"0x0"` used to represent ETH/native gas token
+- [x] Replace with the canonical LI.FI / 1inch sentinel: `0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE`
+      (mixed-case checksummed form, all E's with a few lowercase e's)
+- [x] Update `src/config/chains.ts` nativeToken address fields if they use zero address
+      (chains.ts did not use zero address for native token — no change needed)
+- [x] Update any scanner adapters that return zero address for native ETH balance
+      (etherscan.ts, blockscout.ts, tokenFetcher.ts — all updated to NATIVE_TOKEN_ADDRESS)
+- [x] Update `useSweep.ts` — any isNative checks that rely on zero address comparison
+- [x] Add a shared constant `NATIVE_TOKEN_ADDRESS` in `src/config/types.ts` or
+      `src/config/chains.ts` and import it everywhere — no more magic strings
+- [x] Add unit test: verify NATIVE_TOKEN_ADDRESS matches LI.FI's expected sentinel
+
+### Task 20: Wire Token Viability Classification into Real Scan
+- [ ] Audit `/api/scan` route — confirm `viability` field is populated by real gas estimation
+      logic and NOT just returned as a hardcoded mock value
+- [ ] If `addGasViabilityClassification()` (or equivalent) is only called on mock data,
+      wire it into the real `BlockscoutScanner` and `EtherscanScanner` response paths
+- [ ] Viability logic: fetch current gas price via `eth_gasPrice` RPC call (use a public
+      RPC if no paid one configured), estimate gas for approve+swap (use LI.FI quote's
+      `gasCostUSD` field if available), classify:
+        - `sweepable` — net proceeds > gas cost
+        - `uneconomic` — gas cost >= token value
+        - `no-route` — LI.FI returned no route (quota error or no liquidity)
+- [ ] Add `VIABILITY_GAS_BUFFER` config (default: 1.2× — require 20% margin above gas)
+- [ ] Unit test: given mocked gas price + token value, verify all 3 classifications work
+
+### Task 21: Replace In-Memory Cache with Persistent Store
+- [ ] Identify all in-memory caches in the codebase (search for `Map`, `{}` objects
+      used as caches, module-level variables holding quote/scan results)
+- [ ] Replace the quote cache in `/api/quote` with a persistent store:
+      - Option A (simpler): use `node-cache` or `lru-cache` npm package with TTL —
+        at least survives across requests within the same server process
+      - Option B (recommended): SQLite via `better-sqlite3` — store
+        `(token_address, chain_id, quote_json, expires_at)`, query before calling LI.FI
+- [ ] Replace the scan result cache (if any) in `/api/scan` similarly
+- [ ] Cache TTLs: quotes 30s, scan results 5 minutes
+- [ ] Add cache invalidation on sweep completion (so next scan reflects swept tokens)
+- [ ] Unit test: verify cache hit returns cached value; verify TTL expiry triggers refresh
+
+### Task 22: Fix isNative Check Mismatch
+- [x] Find all `isNative` checks across the codebase (search `isNative`, `token.native`,
+      `address === '0x0'`, `address === AddressZero`, etc.)
+- [x] Confirm `useSweep.ts` and all scanner adapters use the SAME definition of isNative
+      (should be: `address.toLowerCase() === NATIVE_TOKEN_ADDRESS.toLowerCase()`)
+- [x] Fix any mismatches found — scanners and sweep hook must agree on which token is native
+      (useSweep.ts had `=== '0x0'` in fetchQuotes and `=== '0x0' || ...` in executeSweep — both fixed)
+- [x] If a scanner returns native ETH as a `TokenBalance` entry, ensure its address field
+      uses `NATIVE_TOKEN_ADDRESS` (not zero address or empty string)
+- [x] Add a type guard `isNativeToken(address: string): boolean` in `src/config/types.ts`
+      and replace all ad-hoc checks with it
+
+---
+
+## Phase 4 — Expansion
+
+### Task 23: Additional Chain API Keys + Config
+- [ ] Add Gnosis Chain to `src/config/chains.ts` (chainId 100, Gnosisscan explorer)
+- [ ] Add BNB Chain (BSC) (chainId 56, Bscscan explorer)
+- [ ] Add Avalanche C-Chain (chainId 43114, Snowtrace / Routescan explorer)
+- [ ] Add Mantle (chainId 5000, Mantlescan explorer)
+- [ ] Add Mode (chainId 34443, Modescan / Blockscout explorer)
+- [ ] Add Blast (chainId 81457, Blastscan explorer)
+- [ ] Obtain and add API keys for each new chain's explorer to `.env`
+- [ ] Confirm LI.FI supports each new chain (check LI.FI `/chains` endpoint)
+- [ ] Add new chains to demo mode MockScanner so demo flow still works
+- [ ] Update README chain list
+
+### Task 24: Etherscan Scanner Pagination Beyond 100
+- [ ] Audit `EtherscanScanner.fetchTokenBalances()` — confirm it currently calls
+      `tokentx` API with `offset=100` (the default Etherscan page size)
+- [ ] Implement pagination loop: start with `page=1&offset=100`, keep fetching next
+      pages until the API returns fewer than 100 results (last page signal)
+- [ ] Add `MAX_PAGES` safety cap (default: 20 pages = 2000 transfers) to prevent
+      runaway API calls on whale addresses
+- [ ] Deduplicate token addresses across pages (same token may appear many times)
+- [ ] After collecting all transfer history, batch-call `balanceOf` for each unique
+      token address to get current balance (not historical transfer amounts)
+- [ ] Add `ETHERSCAN_MAX_PAGES` env var for override
+- [ ] Unit test: mock paginated Etherscan response, verify all pages are fetched and
+      tokens deduplicated correctly
+
+### Task 25: Parallel Chain Sweeping
+- [ ] Audit `useSweep.ts` — confirm chain sweeps are currently sequential
+      (chain 1 fully complete before chain 2 starts)
+- [ ] Refactor sweep execution to run per-chain `wallet_sendCalls` batches in parallel:
+      - Group approved plans by `sourceChain`
+      - Fire all `wallet_sendCalls` for each chain simultaneously (Promise.all)
+      - Track per-chain status independently
+      - Bridge calls (cross-chain) still need same-chain swaps to complete first
+- [ ] Update `sweepStateAtom` to hold a `Map<chainId, ChainSweepStatus>` instead of
+      a single global status
+- [ ] Update sweep progress UI to show per-chain status columns/rows simultaneously
+- [ ] Add timeout per chain: if a chain doesn't confirm within 5 minutes, mark as
+      failed and continue with other chains
+- [ ] Unit test: mock multi-chain sweep, verify all chains start without waiting for
+      each other
+
+### Task 26: Price Oracle Pre-Filter Before LI.FI Quoting
+- [ ] Before calling LI.FI for a quote, estimate token USD value using a cheap price oracle:
+      - Option A: CoinGecko `/simple/token_price/{chain}?contract_addresses={addr}` (free tier)
+      - Option B: DefiLlama `/prices/current/{chain}:{addr}` (free, no key needed)
+      - Option C: Use the existing price data already returned by the scanner (if any)
+- [ ] If estimated value < `MIN_QUOTE_THRESHOLD_USD` (default: $1.00), skip LI.FI quote
+      entirely and classify as `uneconomic` immediately
+- [ ] This avoids wasting LI.FI quota on dust that will never be sweepable
+- [ ] Add `MIN_QUOTE_THRESHOLD_USD` to config (env var override)
+- [ ] Add `PRICE_ORACLE` config option: `coingecko` | `defillama` | `none`
+- [ ] Unit test: tokens below threshold are never quoted; tokens above threshold proceed
+      to LI.FI
+
+### Task 27: Sequential Transaction Fallback (Non-EIP-5792 Wallets)
+- [ ] Currently: if wallet doesn't support `wallet_sendCalls`, show a gating screen
+      recommending Ambire/MetaMask 12+/Coinbase Wallet
+- [ ] Implement fallback: for wallets with no EIP-5792, execute sweeps as sequential
+      individual `eth_sendTransaction` calls (one approve, wait, one swap, wait, repeat)
+- [ ] Add `SWEEP_MODE` state: `batch` (EIP-5792) | `sequential` (fallback)
+- [ ] In sequential mode: show a clear warning — \"Your wallet does not support batched
+      transactions. Each step will require a separate wallet confirmation.\"
+- [ ] Show step-by-step confirmation prompts: \"Confirm approval for TOKEN_NAME (step 2 of 8)\"
+- [ ] On user rejection of any step: pause and offer Resume/Cancel options
+- [ ] Bridge transactions always sequential regardless of mode (they require ordering)
+- [ ] Unit test sequential mode path — mock `eth_sendTransaction`, verify calls fire
+      in correct order with correct params
