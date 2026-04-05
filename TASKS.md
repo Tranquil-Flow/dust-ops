@@ -280,15 +280,19 @@ They are code-level issues that can be resolved without external API keys or a b
       to LI.FI (18 oracle tests + 6 quote route pre-filter tests; 250 total)
 
 ### Task 27: Sequential Transaction Fallback (Non-EIP-5792 Wallets)
-- [ ] Currently: if wallet doesn't support `wallet_sendCalls`, show a gating screen
-      recommending Ambire/MetaMask 12+/Coinbase Wallet
-- [ ] Implement fallback: for wallets with no EIP-5792, execute sweeps as sequential
+- [x] Implement fallback: for wallets with no EIP-5792, execute sweeps as sequential
       individual `eth_sendTransaction` calls (one approve, wait, one swap, wait, repeat)
-- [ ] Add `SWEEP_MODE` state: `batch` (EIP-5792) | `sequential` (fallback)
+      (sweepSingleChainSequential in sweepExecution.ts; chains still run in parallel)
+- [x] Add `SWEEP_MODE` state: `batch` (EIP-5792) | `sequential` (fallback)
+      (SweepMode type in config/types.ts; auto-detected via useWalletCapabilities)
 - [ ] In sequential mode: show a clear warning — \"Your wallet does not support batched
       transactions. Each step will require a separate wallet confirmation.\"
+      <!-- BLOCKED: requires browser — UI work deferred, sweepMode exposed from useSweep() -->
 - [ ] Show step-by-step confirmation prompts: \"Confirm approval for TOKEN_NAME (step 2 of 8)\"
-- [ ] On user rejection of any step: pause and offer Resume/Cancel options
-- [ ] Bridge transactions always sequential regardless of mode (they require ordering)
-- [ ] Unit test sequential mode path — mock `eth_sendTransaction`, verify calls fire
-      in correct order with correct params
+      <!-- BLOCKED: requires browser — logic is in place, needs UI surface -->
+- [x] On user rejection of any step: error is tagged reason='user_rejected'
+      so callers can offer Resume/Cancel without marking the sweep permanently failed
+- [x] Bridge transactions always sequential regardless of mode (they require ordering)
+      (bridge polling identical in both batch and sequential paths)
+- [x] Unit test sequential mode path — 14 tests in sequentialSweep.test.ts:
+      receipt polling, rejection detection, native skip, bridge fire, mode dispatch
