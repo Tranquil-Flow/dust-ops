@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { CHAINS } from '../../../config/chains';
 import { isDemoMode } from '../../../config/demo';
 import { createScanner, type TokenBalance } from '../../../utils/scanners';
+import { scanCache } from '../../../utils/cache';
 // In demo mode, createScanner() automatically returns MockScanner — no extra wiring needed.
 
 /** Minimal Ethereum address validation: 0x + 40 hex chars */
@@ -47,6 +48,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
   }
 
+  // Check cache (skip in demo mode — mock data is fast and deterministic)
+  if (!isDemoMode()) {
+    const cacheKey = `scan:${address.toLowerCase()}`;
+    const cachedResults = await scanCache.get<ChainScanResult[]>(cacheKey);
+    if (cachedResults) {
+      return NextResponse.json({ results: cachedResults, demo: false, cached: true });
+    }
+  }
+
   // Run all chain scans in parallel — failures are isolated per chain
   const scanPromises = CHAINS.map(async (chain): Promise<ChainScanResult> => {
     try {
@@ -77,6 +87,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           : 'Unknown error',
     };
   });
+
+  // Cache successful scan results (skip demo mode)
+  if (!isDemoMode()) {
+    const cacheKey = `scan:${address.toLowerCase()}`;
+    await scanCache.set(cacheKey, results);
+  }
 
   return NextResponse.json({ results, demo: isDemoMode() });
 }

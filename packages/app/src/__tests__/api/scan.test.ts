@@ -25,6 +25,24 @@ vi.mock('../../config/demo', () => ({
   DEMO_WALLET_ADDRESS: '0x1234567890abcdef1234567890abcdef12345678',
 }));
 
+// Mock the cache module so tests remain isolated (no cross-test cache pollution)
+vi.mock('../../utils/cache', () => ({
+  scanCache: {
+    get: vi.fn().mockResolvedValue(null), // always a cache miss in tests
+    set: vi.fn().mockResolvedValue(undefined),
+    delete: vi.fn().mockResolvedValue(undefined),
+    close: vi.fn().mockResolvedValue(undefined),
+  },
+  quoteCache: {
+    get: vi.fn().mockResolvedValue(null),
+    set: vi.fn().mockResolvedValue(undefined),
+    delete: vi.fn().mockResolvedValue(undefined),
+    close: vi.fn().mockResolvedValue(undefined),
+  },
+  RouteCache: vi.fn(),
+  InMemoryBackend: vi.fn(),
+}));
+
 // We import AFTER mocking so the route sees the mocked dependencies
 const { POST } = await import('../../app/api/scan/route');
 

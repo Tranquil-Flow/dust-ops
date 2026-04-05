@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSwapProvider } from '@/utils/providers';
 import type { BridgeParams, SwapParams } from '@/utils/providers';
+import { quoteCache } from '@/utils/cache';
 // In demo mode, getSwapProvider() automatically returns MockSwapProvider — no extra wiring needed.
 
 interface QuoteRequestBody {
@@ -14,30 +15,8 @@ interface QuoteRequestBody {
   type: 'swap' | 'bridge';
 }
 
-interface CacheEntry {
-  data: unknown;
-  expiresAt: number;
-}
-
-const cache = new Map<string, CacheEntry>();
-const CACHE_TTL_MS = 30_000; // 30 seconds
-
 function getCacheKey(body: QuoteRequestBody): string {
-  return JSON.stringify(body);
-}
-
-function getFromCache(key: string): unknown | null {
-  const entry = cache.get(key);
-  if (!entry) return null;
-  if (Date.now() > entry.expiresAt) {
-    cache.delete(key);
-    return null;
-  }
-  return entry.data;
-}
-
-function setCache(key: string, data: unknown): void {
-  cache.set(key, { data, expiresAt: Date.now() + CACHE_TTL_MS });
+  return `quote:${JSON.stringify(body)}`;
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -61,7 +40,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   }
 
   const cacheKey = getCacheKey(body);
-  const cached = getFromCache(cacheKey);
+  const cached = await quoteCache.get(cacheKey);
   if (cached) {
     return NextResponse.json(cached);
   }
@@ -94,7 +73,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       quote = await provider.getBridgeQuote(params);
     }
 
-    setCache(cacheKey, quote);
+    await quoteCache.set(cacheKey, quote);
     return NextResponse.json(quote);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
