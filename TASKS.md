@@ -177,18 +177,20 @@ They are code-level issues that can be resolved without external API keys or a b
 - [x] Add unit test: verify NATIVE_TOKEN_ADDRESS matches LI.FI's expected sentinel
 
 ### Task 20: Wire Token Viability Classification into Real Scan
-- [ ] Audit `/api/scan` route — confirm `viability` field is populated by real gas estimation
+- [x] Audit `/api/scan` route — confirm `viability` field is populated by real gas estimation
       logic and NOT just returned as a hardcoded mock value
-- [ ] If `addGasViabilityClassification()` (or equivalent) is only called on mock data,
+- [x] If `addGasViabilityClassification()` (or equivalent) is only called on mock data,
       wire it into the real `BlockscoutScanner` and `EtherscanScanner` response paths
-- [ ] Viability logic: fetch current gas price via `eth_gasPrice` RPC call (use a public
+- [x] Viability logic: fetch current gas price via `eth_gasPrice` RPC call (use a public
       RPC if no paid one configured), estimate gas for approve+swap (use LI.FI quote's
       `gasCostUSD` field if available), classify:
         - `sweepable` — net proceeds > gas cost
         - `uneconomic` — gas cost >= token value
         - `no-route` — LI.FI returned no route (quota error or no liquidity)
-- [ ] Add `VIABILITY_GAS_BUFFER` config (default: 1.2× — require 20% margin above gas)
-- [ ] Unit test: given mocked gas price + token value, verify all 3 classifications work
+- [x] Add `VIABILITY_GAS_BUFFER` config (default: 1.2× — require 20% margin above gas)
+- [x] Unit test: given mocked gas price + token value, verify all 3 classifications work
+      (32 tests in src/__tests__/utils/viability.test.ts; note: no-route is set at quote
+      time by LI.FI failure, not at scan time)
 
 ### Task 21: Replace In-Memory Cache with Persistent Store
 - [x] Identify all in-memory caches in the codebase (search for `Map`, `{}` objects
@@ -233,18 +235,18 @@ They are code-level issues that can be resolved without external API keys or a b
 - [ ] Update README chain list
 
 ### Task 24: Etherscan Scanner Pagination Beyond 100
-- [ ] Audit `EtherscanScanner.fetchTokenBalances()` — confirm it currently calls
+- [x] Audit `EtherscanScanner.fetchTokenBalances()` — confirm it currently calls
       `tokentx` API with `offset=100` (the default Etherscan page size)
-- [ ] Implement pagination loop: start with `page=1&offset=100`, keep fetching next
+- [x] Implement pagination loop: start with `page=1&offset=100`, keep fetching next
       pages until the API returns fewer than 100 results (last page signal)
-- [ ] Add `MAX_PAGES` safety cap (default: 20 pages = 2000 transfers) to prevent
+- [x] Add `MAX_PAGES` safety cap (default: 20 pages = 2000 transfers) to prevent
       runaway API calls on whale addresses
-- [ ] Deduplicate token addresses across pages (same token may appear many times)
-- [ ] After collecting all transfer history, batch-call `balanceOf` for each unique
+- [x] Deduplicate token addresses across pages (same token may appear many times)
+- [x] After collecting all transfer history, batch-call `balanceOf` for each unique
       token address to get current balance (not historical transfer amounts)
-- [ ] Add `ETHERSCAN_MAX_PAGES` env var for override
-- [ ] Unit test: mock paginated Etherscan response, verify all pages are fetched and
-      tokens deduplicated correctly
+- [x] Add `ETHERSCAN_MAX_PAGES` env var for override
+- [x] Unit test: mock paginated Etherscan response, verify all pages are fetched and
+      tokens deduplicated correctly (6 new pagination tests in etherscan.test.ts)
 
 ### Task 25: Parallel Chain Sweeping
 - [ ] Audit `useSweep.ts` — confirm chain sweeps are currently sequential

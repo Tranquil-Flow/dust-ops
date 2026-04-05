@@ -92,6 +92,17 @@ Create packages/app/.env.local with:
     yarn build          # Production build
     yarn test           # Run test suite
 
+## Running Tests (Agent / Sandbox Environments)
+
+The standard `yarn test` calls vitest from the workspace root but requires
+process forking that some sandboxes restrict. Use instead:
+
+    # From the monorepo root (uses root vitest.config.ts with correct @ alias):
+    node node_modules/vitest/vitest.mjs run --pool=vmForks --no-file-parallelism
+
+The root `vitest.config.ts` sets up the `@` path alias pointing to
+`packages/app/src`, required by scanner and API route tests.
+
 Run commands from the monorepo root unless otherwise noted.
 
 ---
