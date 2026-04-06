@@ -231,8 +231,9 @@ They are code-level issues that can be resolved without external API keys or a b
 - [x] Add Blast (chainId 81457, Blastscan explorer)
 - [ ] Obtain and add API keys for each new chain's explorer to `.env`
       (USER ACTION: GNOSISSCAN_API_KEY, BSCSCAN_API_KEY, SNOWSCAN_API_KEY, MANTLESCAN_API_KEY, BLASTSCAN_API_KEY — Mode uses Blockscout, no key needed)
-- [ ] Confirm LI.FI supports each new chain (check LI.FI `/chains` endpoint)
-      (USER ACTION or next session: verify lifiChainKeys dai/bsc/ava/mnt/mod/bls against live LI.FI /chains API)
+- [x] Confirm LI.FI supports each new chain (check LI.FI `/chains` endpoint)
+      (Verified 2026-04-06: all 6 chain keys confirmed against live LI.FI /chains API —
+       dai ✓ bsc ✓ ava ✓ mnt ✓ mod ✓ bls ✓ — 66 chains total in LI.FI registry)
 - [x] Add new chains to demo mode MockScanner so demo flow still works
       (mock.ts: full token sets for all 6 new chains with sweepable/uneconomic/no-route mix)
 - [x] Update README chain list
