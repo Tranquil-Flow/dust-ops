@@ -20,7 +20,7 @@ Due to current limitations (specifically lack of support for Ethereum's [Pectra 
 
 Your wallets are more than just assets — they’re **onchain footprints**. DUST.OPS is designed to:
 
-- Identify tokens across Optimism, Base, and Uniswap Network (potential for any EVM integration)
+- Identify tokens across 15 EVM chains: Ethereum, Base, Optimism, Arbitrum, Polygon, Scroll, Linea, zkSync Era, Unichain, Gnosis, BNB Chain, Avalanche C-Chain, Mantle, Mode, and Blast
 - Pre-select only **liquid tokens** for consolidation
 - Provide **one-click cleanup** using Uniswap and Stargate
 - Optionally routing tokens through **Railgun** to cover your trace
@@ -33,7 +33,7 @@ We don’t just help you consolidate, swap, and bridge — we help you start fre
 ## How DUST.OPS Works
 
 1. You input a private key to connect the source wallet.
-2. DUST.OPS checks **Optimism**, **Base**, and **Unichain** for token balances through utilising Blockscan's APIs.
+2. DUST.OPS checks all 15 supported chains for token balances via Blockscout and Etherscan-compatible explorer APIs.
 3. Liquidity analysis (via Coingecko API) determines what can be swapped.
 4. Tokens with enough liquidity in your wallet are pre-selected for the swap.
 5. You confirm swaps (to ETH) and optionally enable **privacy via Railgun**.
