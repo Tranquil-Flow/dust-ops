@@ -97,7 +97,7 @@ export class LiFiProvider implements SwapProvider {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   private mapQuoteToProviderQuote(quote: any, type: 'swap' | 'bridge'): ProviderQuote {
     const action = quote.action;
     const estimate = quote.estimate;

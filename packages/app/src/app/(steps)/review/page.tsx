@@ -27,7 +27,7 @@ export default function Review() {
     if (selectedTokens.length > 0 && !sweepPlan) {
       fetchQuotes()
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])  
 
   // Navigate to completion when sweep is done
   useEffect(() => {

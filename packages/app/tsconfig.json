@@ -1,7 +1,7 @@
 {
   "extends": "@tsconfig/next/tsconfig.json",
   "compilerOptions": {
-    "target": "es6",
+    "target": "ES2020",
     "noImplicitAny": false,
     "plugins": [
       {
@@ -20,5 +20,5 @@
     "require": ["tsconfig-paths/register"]
   },
   "include": ["next-env.d.ts", "src", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "src/__tests__"]
 }

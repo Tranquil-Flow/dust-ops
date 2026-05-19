@@ -14,7 +14,7 @@ export function useWalletCapabilities(): WalletCapabilitiesResult {
   const [supportsEIP5792, setSupportsEIP5792] = useState(false)
   const [isChecking, setIsChecking] = useState(false)
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   const wc = walletClient as any
   const walletName: string | undefined =
     wc?.transport?.name ?? wc?.account?.connector?.name ?? undefined
@@ -32,7 +32,7 @@ export function useWalletCapabilities(): WalletCapabilitiesResult {
     async function checkCapabilities() {
       try {
         // EIP-5792: wallet_getCapabilities returns a map of chainId → capabilities
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         await (walletClient as any).request({
           method: 'wallet_getCapabilities',
           params: [],

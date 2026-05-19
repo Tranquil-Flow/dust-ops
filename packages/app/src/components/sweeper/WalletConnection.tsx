@@ -58,7 +58,7 @@ export function WalletConnection() {
           <div>
             <div className='font-semibold mb-1'>Batch transactions not supported</div>
             <p className='text-xs opacity-80 mb-2'>
-              Your wallet doesn't support EIP-5792 (<code>wallet_sendCalls</code>). Dust sweeping
+              Your wallet doesn&apos;t support EIP-5792 (<code>wallet_sendCalls</code>). Dust sweeping
               will fall back to individual transactions, which costs more gas.
             </p>
             <p className='text-xs opacity-70'>

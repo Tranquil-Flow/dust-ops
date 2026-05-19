@@ -14,7 +14,7 @@ import { CHAIN_MAP } from '@/config/chains'
 import type { ScannedToken } from '@/config/types'
 
 /** Stable key for a scanned token */
-export function tokenKey(t: ScannedToken): string {
+function tokenKey(t: ScannedToken): string {
   return `${t.chainId}-${t.address}`
 }
 
@@ -52,7 +52,7 @@ export default function SelectTokens() {
     if (scannedTokens.length > 0 && selectedTokens.length === 0) {
       setSelectedTokens(scannedTokens.filter((t) => t.viability === 'sweepable'))
     }
-  }, [scannedTokens]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [scannedTokens])
 
   // Selected keys as a Set for O(1) lookup
   const selectedKeys = useMemo(

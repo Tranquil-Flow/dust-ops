@@ -32,7 +32,7 @@ export const MAX_BRIDGE_RETRIES = 60
 
 /** Minimal wallet-client interface needed by sweep execution (testable). */
 export interface WalletRequestFn {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+   
   (params: { method: string; params?: any[] }): Promise<any>
 }
 

@@ -180,9 +180,9 @@ export function useSweep() {
     }
 
     // Wrap walletClient.request for the utility function
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const walletRequest = (params: { method: string; params?: any[] }) =>
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       (walletClient as any).request(params)
 
     // Execute all chains in parallel — allSettled so one failure doesn't abort others
