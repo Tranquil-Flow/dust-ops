@@ -1,67 +1,38 @@
 # DUST.OPS
-![banner](https://github.com/user-attachments/assets/bd6ac7ab-cce6-4532-8c47-db1348d289d4)
 
-A **token sweeper** and **privacy enabler** for your fragmented, cluttered EVM wallets. Designed for surgical execution, **DUST.OPS** finds your liquid assets across chains, consolidates them, and optionally ghosts your exit through a Railgun-powered privacy hatch.
+## Current public-address planner
 
-[Demo Video](https://ethglobal.com/showcase/-uk2n7) | [Live App](https://dust-ops.vercel.app/) | [Slide Deck](https://github.com/kevinstubbs/dust-ops/blob/main/slide-deck.md) | [Design Files](https://github.com/kevinstubbs/dust-ops/blob/main/design-files.md)
+**[Open the verified planner](https://dust-ops-planner.vercel.app/)**
 
----
+The current hosted release accepts a **public EVM address** to inspect holdings, request quotes, simulate an unsigned plan, and review its exact JSON. **Wallet connection and transaction execution are disabled.** It does not transfer funds or provide transaction privacy.
 
-## Disclaimer
+**Never enter a private key, seed phrase, or signing secret.**
 
-**Private key is required for this prototype.**
-Due to current limitations (specifically lack of support for Ethereum's [Pectra Upgrade](https://eips.ethereum.org/EIPS/eip-7702) and `signAuthorization`), we're using direct key injection for the sake of this hackathon build.  
+### Unsafe legacy deployment
 
-> **Never use a primary wallet. Only test with burner wallets.**
+`dust-ops.vercel.app` is an **unsupported legacy deployment**, not the current release. It still exposes private-key entry and is outside the replacement project's administrative control. **Do not use it or enter secrets there.** Removing our links does not disable that site; owner-side containment is still outstanding.
 
----
+The original hackathon material's private-key instructions, execution claims, and privacy guarantees do not apply to the current planner and must not be treated as safe operating instructions.
 
-## Why DUST.OPS?
+## Using the planner
 
-Your wallets are more than just assets — they’re **onchain footprints**. DUST.OPS is designed to:
+1. Enter a public wallet address.
+2. Review the scan's coverage and unavailable/native-only chain disclosures.
+3. Select eligible holdings and a destination.
+4. Review quotes, simulation status, and the exact unsigned plan.
 
-- Identify tokens across 15 EVM chains: Ethereum, Base, Optimism, Arbitrum, Polygon, Scroll, Linea, zkSync Era, Unichain, Gnosis, BNB Chain, Avalanche C-Chain, Mantle, Mode, and Blast
-- Pre-select only **liquid tokens** for consolidation
-- Provide **one-click cleanup** using Uniswap and Stargate
-- Optionally routing tokens through **Railgun** to cover your trace
-- Deliver assets to a **fresh wallet**
+Execution remains disabled even when simulation succeeds. Provider coverage and quotes can change; a simulation is not a guarantee that a future transaction will succeed.
 
-We don’t just help you consolidate, swap, and bridge — we help you start fresh.
+If a scan is rate-limited, wait 60 seconds, then use **Return to address form** and try again. Avoid automated retry loops. Hosting may pause when its spending threshold is reached.
 
----
+## Release and source boundaries
 
-## How DUST.OPS Works
+The hosted planner was qualified from candidate `0117a9e35a92456341f9bee0b9d6d2f9adddf7d8` in an isolated release checkout. **This README update does not publish that candidate to this default branch or qualify the historical code here for installation or execution.** The hosted release and this branch's source must not be assumed identical.
 
-1. You input a private key to connect the source wallet.
-2. DUST.OPS checks all 15 supported chains for token balances via Blockscout and Etherscan-compatible explorer APIs.
-3. Liquidity analysis (via Coingecko API) determines what can be swapped.
-4. Tokens with enough liquidity in your wallet are pre-selected for the swap.
-5. You confirm swaps (to ETH) and optionally enable **privacy via Railgun**.
-6. ETH proceeds are sent to a **new wallet**.
-7. Now you have a **fresh wallet with funds**, completely detached from your original onchain identity.
+The planner is not an externally audited wallet-execution product. Physical-wallet operation, transaction execution, cross-chain execution qualification, and execution-tier review remain separate work. Installed dependencies retain documented moderate audit findings; no blanket security or anonymity guarantee is made.
 
-![flow-s](https://github.com/user-attachments/assets/7066f341-07c9-472d-bd54-4e3123137e01)
+Browser dependency notices are available in the deployed application's footer.
 
----
+## Project history
 
-## Tech Stack
-
-### Dev & Frontend
-- `React`, `Typescript`, `Tailwind`, `Viem`, `Wagmi`, `Uniswap`, `Coingecko API`
-
-### Backend / Ops
-- `Next.js`, `Vercel`, `Redis Caching Layer`, `LayerZero`, `Stargate` ,`Blockscout`, `Foundry`
-
-### Smart Contracts List
-
-| Contract | Address | Network |
-|----------|---------|---------|
-| `ExternalSweeper.sol` | 0x1368D7db664751ac371e906C8d144861b85fc4b7 | Unichain, Base |
-| `OriginSweeper.sol` | 0x6c97ADcd698e00A4f58757fbc4095048684691e8 | Optimism |
-
----
-
-## Built for ETHGlobal Prague 2025
-
-Join the operation. Run the cleanup.
-**Exit with no echo.**
+DUST.OPS originated as an ETHGlobal Prague 2025 hackathon project. Historical plans and Git history are retained for context, not as current deployment or security guidance.
